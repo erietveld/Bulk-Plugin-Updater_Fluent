@@ -63,6 +63,7 @@ import { StoreUpdatesDataGrid } from './StoreUpdatesDataGrid';
 import { StoreUpdatesFilters } from './StoreUpdatesFilters';
 import { useStoreUpdatesActions } from './StoreUpdatesActions';
 import { StatsGridSkeleton, DataGridSkeleton } from '../../../components/skeleton/SkeletonComponents';
+import { ApiErrorModal } from '../error/ApiErrorModal'; // NEW: For enhanced error handling
 
 interface StoreUpdatesDashboardProps {
   className?: string;
@@ -89,140 +90,36 @@ const ColorSchemeToggle: React.FC = () => {
   );
 };
 
-export const StoreUpdatesDashboard: React.FC<StoreUpdatesDashboardProps> = ({
-  className,
-  showHeader = true,
-  compactMode = false
+// Main Dashboard Content Component (memoized to prevent unnecessary re-renders)
+const DashboardContent: React.FC<{
+  storeUpdatesData: any;
+  filteringHook: any;
+  paginationHook: any;
+  statsHook: any;
+  selectionHook: any;
+  userContext: any;
+  dashboardStats: any;
+  storeUpdatesActions: any;
+  compactMode: boolean;
+  showHeader: boolean;
+  handleDataRefresh: () => Promise<void>;
+  handleSmartClearState: () => void;
+  handleExport: () => void;
+}> = React.memo(({
+  storeUpdatesData,
+  filteringHook,
+  paginationHook,
+  statsHook,
+  selectionHook,
+  userContext,
+  dashboardStats,
+  storeUpdatesActions,
+  compactMode,
+  showHeader,
+  handleDataRefresh,
+  handleSmartClearState,
+  handleExport
 }) => {
-  const { showSuccess, showError, showInfo } = useNotifications();
-
-  const storeUpdatesData = useStoreUpdatesHybrid();
-  const filteringHook = useStoreUpdatesFiltering();
-  const paginationHook = useStoreUpdatesPagination();
-  
-  // NEW: Use store-based dual-source statistics (single source of truth)
-  const statsHook = useStoreUpdatesStats();
-
-  const selectionHook = useStoreUpdatesSelection(storeUpdatesData.data.rawServerData || []);
-
-  // NEW: Use local store for user context with admin role
-  const userContext = useEnhancedUserContext();
-
-  // Get the markDataActionsPerformed action from the store
-  const markDataActionsPerformed = useStoreUpdatesStore(state => state.actions.markDataActionsPerformed);
-
-  // SMART REFRESH: Define callbacks before hook usage for stable dependencies
-  const handleDataRefresh = React.useCallback(async () => {
-    // BACKEND REFETCH: For data-changing operations (install, sync, manual refresh)
-    try {
-      await storeUpdatesData.refresh();
-      
-      // NEW: Mark that data-changing actions have been performed
-      // This will switch statistics to Pattern 2C (API-calculated) since server-injected data is now stale
-      markDataActionsPerformed();
-      
-      showSuccess({
-        title: 'Data Refreshed',
-        message: `Data refreshed successfully, ${userContext.firstName}! Filters and selections have been cleared.`
-      });
-      
-      logger.info('Dashboard: Backend data refresh completed', createLogContext({
-        action: 'backend-refetch',
-        reason: 'data-changing-operation',
-        userContext: userContext.firstName,
-        switchedToPattern2C: true
-      }));
-    } catch (error) {
-      showError({
-        title: 'Refresh Failed',
-        message: 'Failed to refresh store updates data.'
-      });
-      
-      logger.error('Dashboard: Backend data refresh failed', error instanceof Error ? error : new Error(String(error)));
-    }
-  }, [storeUpdatesData.refresh, userContext.firstName, showSuccess, showError, markDataActionsPerformed]);
-
-  const handleSmartClearState = React.useCallback(() => {
-    // SMART CLEAR: Client-side only clearing (no backend refetch)
-    logger.info('Dashboard: Smart client-side clearing initiated', createLogContext({
-      action: 'smart-client-clear',
-      reason: 'filter-selection-clear',
-      backendRefetch: false
-    }));
-    
-    // Clear selections
-    selectionHook.clearSelection();
-    
-    // Clear all filters
-    filteringHook.clearFilters();
-    
-    logger.info('Dashboard: Smart client-side clearing completed', createLogContext({
-      selectionsCleared: true,
-      filtersCleared: true,
-      backendRefetch: false
-    }));
-  }, [selectionHook.clearSelection, filteringHook.clearFilters]);
-
-  // FIXED: Initialize useStoreUpdatesActions at top level with stable dependencies
-  // CORRECTED: Use rawServerData (all records) instead of paginated records for proper selection
-  const storeUpdatesActions = useStoreUpdatesActions({
-    selectionHook,
-    recordCount: paginationHook.totalRecords || 0,
-    compactMode,
-    allRecords: storeUpdatesData.data.rawServerData || [], // Full dataset for proper "Install All" behavior
-    onDataRefresh: handleDataRefresh,
-    onClearState: handleSmartClearState, // FIXED: Pass the smart clear state function
-    filteringHook
-  });
-
-
-
-  const handleExport = React.useCallback(() => {
-    const exportCount = selectionHook.stats.totalSelected || paginationHook.totalRecords || 0;
-    showInfo({
-      title: 'Export Started',
-      message: `Exporting ${exportCount} store updates...`
-    });
-  }, [selectionHook.stats.totalSelected, paginationHook.totalRecords, showInfo]);
-
-  // ENHANCED: Dashboard Statistics from Zustand Store (Single Source of Truth)
-  const dashboardStats = useMemo(() => {
-    const activeStats = statsHook.data;
-    
-    logger.info('Dashboard using store-based dual-source statistics', createLogContext({
-      pattern: 'dashboard-stats-consumption',
-      source: activeStats.hybridMetadata?.source || 'unknown',
-      isCalculatedPreferred: activeStats.hybridMetadata?.isCalculatedPreferred || false,
-      hasSignificantDifference: activeStats.hybridMetadata?.hasSignificantDifference || false,
-      hasStringCorruption: activeStats.hybridMetadata?.hasStringCorruption || false,
-      totalUpdates: activeStats.totalMajorUpdates + activeStats.totalMinorUpdates + activeStats.totalPatchUpdates
-    }));
-
-    return {
-      // Primary statistics from hybrid dual-source approach
-      totalApplications: activeStats.totalApplications,
-      totalMajorUpdates: activeStats.totalMajorUpdates,
-      totalMinorUpdates: activeStats.totalMinorUpdates,
-      totalPatchUpdates: activeStats.totalPatchUpdates,
-      
-      // Context-specific statistics - Use actual selection count instead of store
-      criticalCount: activeStats.criticalCount,
-      currentlyShown: activeStats.currentlyShown,
-      selectedCount: selectionHook.stats.totalSelected, // FIXED: Direct from selection hook
-      
-      // Metadata for debugging and insights
-      source: activeStats.hybridMetadata?.source || 'pattern-2a-immediate',
-      isCalculatedPreferred: activeStats.hybridMetadata?.isCalculatedPreferred || false,
-      hasSignificantDifference: activeStats.hybridMetadata?.hasSignificantDifference || false,
-      hasStringCorruption: activeStats.hybridMetadata?.hasStringCorruption || false,
-      timestamp: activeStats.hybridMetadata?.timestamp || Date.now(),
-      
-      // For debugging comparison
-      immediateStats: activeStats.hybridMetadata?.immediateStats,
-      calculatedStats: activeStats.hybridMetadata?.calculatedStats
-    };
-  }, [statsHook.data, selectionHook.stats.totalSelected]); // FIXED: Include selection count directly
-
   // PATTERN 2A: Show immediate UI with server-injected data, progressive enhancement
   if (storeUpdatesData.isError) {
     return (
@@ -236,10 +133,6 @@ export const StoreUpdatesDashboard: React.FC<StoreUpdatesDashboardProps> = ({
       </Box>
     );
   }
-
-  // PATTERN 2A: Show UI immediately with server-injected data, load table progressively
-  const hasServerData = storeUpdatesData.data.rawServerData && storeUpdatesData.data.rawServerData.length > 0;
-  const isInitialLoad = storeUpdatesData.isLoading && !hasServerData;
 
   return (
     <Box py={compactMode ? 'xs' : 'sm'} w="100%" maw="100%">
@@ -343,7 +236,7 @@ export const StoreUpdatesDashboard: React.FC<StoreUpdatesDashboardProps> = ({
                       <Badge size="xs" color="orange" mt={2}>Significant Diff</Badge>
                     )}
                   </div>
-                  <Badge size="lg" circle color="teal">{dashboardStats.selectedCount}</Badge>
+                  <Badge size="lg" circle color="teal">{String(dashboardStats.selectedCount)}</Badge>
                 </Group>
               </GenericCard>
             </Grid.Col>
@@ -357,9 +250,9 @@ export const StoreUpdatesDashboard: React.FC<StoreUpdatesDashboardProps> = ({
                       {dashboardStats.totalMajorUpdates + dashboardStats.totalMinorUpdates + dashboardStats.totalPatchUpdates}
                     </Text>
                     <Group gap={2} mt={4}>
-                      <Badge size="xs" color="red">{dashboardStats.totalMajorUpdates} Major</Badge>
-                      <Badge size="xs" color="yellow">{dashboardStats.totalMinorUpdates} Minor</Badge>
-                      <Badge size="xs" color="green">{dashboardStats.totalPatchUpdates} Patch</Badge>
+                      <Badge size="xs" color="red">{String(dashboardStats.totalMajorUpdates)} Major</Badge>
+                      <Badge size="xs" color="yellow">{String(dashboardStats.totalMinorUpdates)} Minor</Badge>
+                      <Badge size="xs" color="green">{String(dashboardStats.totalPatchUpdates)} Patch</Badge>
                     </Group>
                     {logger.isDebugEnabled() && (
                       <Group gap={2} mt={2}>
@@ -441,6 +334,238 @@ export const StoreUpdatesDashboard: React.FC<StoreUpdatesDashboardProps> = ({
         )}
       </Stack>
     </Box>
+  );
+});
+
+export const StoreUpdatesDashboard: React.FC<StoreUpdatesDashboardProps> = ({
+  className,
+  showHeader = true,
+  compactMode = false
+}) => {
+  const { showSuccess, showError, showInfo } = useNotifications();
+
+  const storeUpdatesData = useStoreUpdatesHybrid();
+  const filteringHook = useStoreUpdatesFiltering();
+  const paginationHook = useStoreUpdatesPagination();
+  
+  // NEW: Use store-based dual-source statistics (single source of truth)
+  const statsHook = useStoreUpdatesStats();
+
+  const selectionHook = useStoreUpdatesSelection(storeUpdatesData.data.rawServerData || []);
+
+  // NEW: Use local store for user context with admin role
+  const userContext = useEnhancedUserContext();
+
+  // Get the markDataActionsPerformed action from the store
+  const markDataActionsPerformed = useStoreUpdatesStore(state => state.actions.markDataActionsPerformed);
+
+  // SMART REFRESH: Define callbacks before hook usage for stable dependencies
+  const handleDataRefresh = React.useCallback(async () => {
+    // BACKEND REFETCH: For data-changing operations (install, sync, manual refresh)
+    try {
+      await storeUpdatesData.refresh();
+      
+      // NEW: Mark that data-changing actions have been performed
+      // This will switch statistics to Pattern 2C (API-calculated) since server-injected data is now stale
+      markDataActionsPerformed();
+      
+      showSuccess({
+        title: 'Data Refreshed',
+        message: `Data refreshed successfully, ${userContext.firstName}! Filters and selections have been cleared.`
+      });
+      
+      logger.info('Dashboard: Backend data refresh completed', createLogContext({
+        action: 'backend-refetch',
+        reason: 'data-changing-operation',
+        userContext: userContext.firstName,
+        switchedToPattern2C: true
+      }));
+    } catch (error) {
+      showError({
+        title: 'Refresh Failed',
+        message: 'Failed to refresh store updates data.'
+      });
+      
+      logger.error('Dashboard: Backend data refresh failed', error instanceof Error ? error : new Error(String(error)));
+    }
+  }, [storeUpdatesData.refresh, userContext.firstName, showSuccess, showError, markDataActionsPerformed]);
+
+  const handleSmartClearState = React.useCallback(() => {
+    // SMART CLEAR: Client-side only clearing (no backend refetch)
+    logger.info('Dashboard: Smart client-side clearing initiated', createLogContext({
+      action: 'smart-client-clear',
+      reason: 'filter-selection-clear',
+      backendRefetch: false
+    }));
+    
+    // Clear selections
+    selectionHook.clearSelection();
+    
+    // Clear all filters
+    filteringHook.clearFilters();
+    
+    logger.info('Dashboard: Smart client-side clearing completed', createLogContext({
+      selectionsCleared: true,
+      filtersCleared: true,
+      backendRefetch: false
+    }));
+  }, [selectionHook.clearSelection, filteringHook.clearFilters]);
+
+  // FIXED: Initialize useStoreUpdatesActions at top level with stable dependencies
+  // CORRECTED: Use rawServerData (all records) instead of paginated records for proper selection
+  const storeUpdatesActions = useStoreUpdatesActions({
+    selectionHook,
+    recordCount: paginationHook.totalRecords || 0,
+    compactMode,
+    allRecords: storeUpdatesData.data.rawServerData || [], // Full dataset for proper "Install All" behavior
+    onDataRefresh: handleDataRefresh,
+    onClearState: handleSmartClearState, // FIXED: Pass the smart clear state function
+    filteringHook
+  });
+
+  // NEW: Get API error modal state from actions hook
+  const { apiErrorModal } = storeUpdatesActions;
+
+  const handleExport = React.useCallback(() => {
+    const exportCount = selectionHook.stats.totalSelected || paginationHook.totalRecords || 0;
+    showInfo({
+      title: 'Export Started',
+      message: `Exporting ${exportCount} store updates...`
+    });
+  }, [selectionHook.stats.totalSelected, paginationHook.totalRecords, showInfo]);
+
+  // ENHANCED: Dashboard Statistics from Zustand Store (Single Source of Truth)
+  const dashboardStats = useMemo(() => {
+    const activeStats = statsHook.data;
+    
+    // FIXED: Only log stats recalculation during development or when values significantly change
+    if (logger.isDebugEnabled()) {
+      const prevStats = React.useRef<any>(null);
+      const currentTotalUpdates = activeStats.totalMajorUpdates + activeStats.totalMinorUpdates + activeStats.totalPatchUpdates;
+      const prevTotalUpdates = prevStats.current ? 
+        prevStats.current.totalMajorUpdates + prevStats.current.totalMinorUpdates + prevStats.current.totalPatchUpdates : -1;
+      
+      // Only log if there's a significant change in data or it's the first calculation
+      const shouldLog = prevTotalUpdates === -1 || 
+        Math.abs(currentTotalUpdates - prevTotalUpdates) > 0 ||
+        activeStats.hybridMetadata?.source !== prevStats.current?.source;
+      
+      if (shouldLog) {
+        logger.info('Dashboard stats recalculated', createLogContext({
+          trigger: 'useMemo-dependency-change',
+          source: activeStats.hybridMetadata?.source || 'unknown',
+          totalUpdates: currentTotalUpdates,
+          selectedCount: selectionHook.stats.totalSelected,
+          significantChange: Math.abs(currentTotalUpdates - prevTotalUpdates) > 0,
+          timestamp: String(Date.now())
+        }));
+        
+        prevStats.current = activeStats;
+      }
+    }
+
+    return {
+      // Primary statistics from hybrid dual-source approach
+      totalApplications: activeStats.totalApplications,
+      totalMajorUpdates: activeStats.totalMajorUpdates,
+      totalMinorUpdates: activeStats.totalMinorUpdates,
+      totalPatchUpdates: activeStats.totalPatchUpdates,
+      
+      // Context-specific statistics - Use actual selection count instead of store
+      criticalCount: activeStats.criticalCount,
+      currentlyShown: activeStats.currentlyShown,
+      selectedCount: selectionHook.stats.totalSelected, // FIXED: Direct from selection hook
+      
+      // Metadata for debugging and insights
+      source: activeStats.hybridMetadata?.source || 'pattern-2a-immediate',
+      isCalculatedPreferred: activeStats.hybridMetadata?.isCalculatedPreferred || false,
+      hasSignificantDifference: activeStats.hybridMetadata?.hasSignificantDifference || false,
+      hasStringCorruption: activeStats.hybridMetadata?.hasStringCorruption || false,
+      timestamp: activeStats.hybridMetadata?.timestamp || Date.now(),
+      
+      // For debugging comparison
+      immediateStats: activeStats.hybridMetadata?.immediateStats,
+      calculatedStats: activeStats.hybridMetadata?.calculatedStats
+    };
+  }, [statsHook.data, selectionHook.stats.totalSelected]); // FIXED: Include selection count directly
+
+  // DEBUG: Monitor what's causing double renders (debug mode only)
+  // FIXED: Add ref to track previous values to detect actual changes
+  const previousValues = React.useRef<{
+    statsTimestamp?: number;
+    selectedCount?: number;
+  }>({});
+
+  useEffect(() => {
+    if (logger.isDebugEnabled()) {
+      const currentStatsTimestamp = statsHook.data?.hybridMetadata?.timestamp;
+      const currentSelectedCount = selectionHook.stats.totalSelected;
+      
+      // Only log if values actually changed
+      const statsChanged = previousValues.current.statsTimestamp !== currentStatsTimestamp;
+      const selectionChanged = previousValues.current.selectedCount !== currentSelectedCount;
+      
+      // FIXED: Only log if there are potential performance issues or significant changes
+      const isRapidChange = previousValues.current.statsTimestamp && 
+        currentStatsTimestamp && 
+        (currentStatsTimestamp - previousValues.current.statsTimestamp) < 50;
+      
+      const shouldLog = (statsChanged || selectionChanged) && (
+        isRapidChange || // Rapid changes might indicate performance issues
+        selectionChanged || // Selection changes are always interesting
+        previousValues.current.statsTimestamp === undefined // First change
+      );
+      
+      if (shouldLog) {
+        logger.info('Dashboard dependency changed', createLogContext({
+          trigger: 'dependency-monitor',
+          statsChanged,
+          selectionChanged,
+          isRapidChange,
+          timeDeltaMs: previousValues.current.statsTimestamp && currentStatsTimestamp ? 
+            currentStatsTimestamp - previousValues.current.statsTimestamp : 0,
+          timestamp: String(Date.now())
+        }));
+      }
+      
+      // Update previous values
+      previousValues.current = {
+        statsTimestamp: currentStatsTimestamp,
+        selectedCount: currentSelectedCount
+      };
+    }
+  }, [statsHook.data, selectionHook.stats.totalSelected]);
+
+  // PATTERN 2A: Show UI immediately with server-injected data, load table progressively
+  const hasServerData = storeUpdatesData.data.rawServerData && storeUpdatesData.data.rawServerData.length > 0;
+  const isInitialLoad = storeUpdatesData.isLoading && !hasServerData;
+
+  return (
+    <>
+      {/* FIXED: Separate main dashboard content from modal to prevent re-renders */}
+      <DashboardContent
+        storeUpdatesData={storeUpdatesData}
+        filteringHook={filteringHook}
+        paginationHook={paginationHook}
+        statsHook={statsHook}
+        selectionHook={selectionHook}
+        userContext={userContext}
+        dashboardStats={dashboardStats}
+        storeUpdatesActions={storeUpdatesActions}
+        compactMode={compactMode}
+        showHeader={showHeader}
+        handleDataRefresh={handleDataRefresh}
+        handleSmartClearState={handleSmartClearState}
+        handleExport={handleExport}
+      />
+
+      {/* FIXED: Modal rendered separately to prevent dashboard re-renders when modal state changes */}
+      <ApiErrorModal 
+        opened={apiErrorModal.opened}
+        error={apiErrorModal.error}
+        onClose={apiErrorModal.onClose}
+      />
+    </>
   );
 };
 

@@ -108,7 +108,8 @@ export const useStoreUpdatesActions = ({
     confirmationModal,
     showConfirmationModal,
     hideConfirmationModal,
-    handleConfirmInstallation
+    handleConfirmInstallation,
+    apiErrorModal // NEW: Get API error modal state from hook
   } = useInstallUpdates(selectionHook, {
     // FIXED: Only pass onInstallationComplete if onDataRefresh is defined
     ...(onDataRefresh && { onInstallationComplete: onDataRefresh })
@@ -891,7 +892,8 @@ export const useStoreUpdatesActions = ({
 
   return {
     ActionsComponent,
-    FilterAlignedIcons
+    FilterAlignedIcons,
+    apiErrorModal // NEW: Return API error modal state for rendering
   };
 };
 

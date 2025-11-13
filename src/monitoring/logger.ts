@@ -79,7 +79,9 @@ class EnterpriseLogger implements Logger {
   }
 
   info(message: string, context?: LogContext): void {
-    this.logToConsole('info', message, context);
+    if (this.isDebugEnabled()) {
+      this.logToConsole('info', message, context);
+    }
     this.sendToServiceNow('info', message, undefined, context);
   }
 

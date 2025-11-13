@@ -44,7 +44,7 @@ export interface ApiRequestConfig {
   readonly data?: unknown; // Optional request body
   readonly headers: Record<string, string>; // Default to empty object
   readonly timeout: number; // Default to 5000ms
-  readonly retries: number; // Default to 3
+  readonly retries: number; // Default to 0 (no retries)
   readonly retryDelay: number; // Default to 1000ms
 }
 
@@ -169,7 +169,7 @@ export const createApiRequestConfig = (
     data: config?.data,
     headers: config?.headers ?? {},
     timeout: getNumber(config?.timeout, 5000),
-    retries: getNumber(config?.retries, 3),
+    retries: getNumber(config?.retries, 0), // FIXED: No retries by default
     retryDelay: getNumber(config?.retryDelay, 1000)
   };
 };

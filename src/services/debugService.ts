@@ -61,6 +61,29 @@ export class DebugService {
       }));
     }
   }
+  
+  // NEW: API debugging methods
+  logApiRequest(method: string, url: string, params?: any, headers?: any): void {
+    if (this.isDebugMode()) {
+      logger.info(`🔍 API Request: ${method} ${url}`, createLogContext({
+        method,
+        url,
+        params,
+        headers: headers ? Object.keys(headers) : undefined
+      }));
+    }
+  }
+  
+  logApiResponse(url: string, success: boolean, duration?: number, error?: string): void {
+    if (this.isDebugMode()) {
+      logger.info(`🔍 API Response: ${url}`, createLogContext({
+        url,
+        success,
+        duration: duration ? Math.round(duration) : undefined,
+        error
+      }));
+    }
+  }
 }
 
 export const debugService = DebugService.getInstance();

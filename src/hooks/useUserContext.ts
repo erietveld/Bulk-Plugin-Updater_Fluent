@@ -161,59 +161,108 @@ const createQuickStats = (data: any | null | undefined): QuickStats => {
  * This hook provides instant access to user context and system information
  * that was injected server-side via Jelly templates in the UI Page.
  */
+
+// FIXED: Singleton cache to prevent redundant data access
+let pattern2ACache: (ImmediateData & { isPattern2A: boolean }) | null = null;
+let pattern2AAccessCount = 0;
+let pattern2AFirstAccess = 0;
+
+const getPattern2AData = (): ImmediateData & { isPattern2A: boolean } => {
+  // Return cached data if already loaded
+  if (pattern2ACache) {
+    pattern2AAccessCount++;
+    return pattern2ACache;
+  }
+
+  // First access - load and cache the data
+  const data = (window as any).snImmediateData as ImmediateData | undefined;
+  pattern2AAccessCount = 1;
+  pattern2AFirstAccess = Date.now();
+  
+  if (!data) {
+    logger.warn('Pattern 2A immediate data not found', createLogContext({
+      pattern: '2A-missing-data',
+      windowSnImmediateData: !!(window as any).snImmediateData,
+      fallbackMode: true
+    }));
+    
+    // Fallback to traditional g_user if Pattern 2A data is missing
+    const fallbackUser = (window as any).g_user;
+    
+    // Create fallback data using factory functions and nullish coalescing
+    pattern2ACache = {
+      userContext: createUserContext({
+        sys_id: fallbackUser?.userID,
+        user_name: fallbackUser?.userName,
+        display_name: fallbackUser?.getDisplayName?.(),
+        first_name: fallbackUser?.firstName ?? 'User',
+        last_name: fallbackUser?.lastName,
+        email: fallbackUser?.email,
+        roles: fallbackUser?.roles,
+        is_admin: false
+      }),
+      systemContext: createSystemContext({
+        current_time: new Date().toISOString(),
+        current_time_ms: Date.now().toString(),
+        debug_enabled: 'false'
+      }),
+      appContext: createAppContext({}),
+      quickStats: createQuickStats({}),
+      injectionTime: new Date().toISOString(),
+      pattern: '2A-immediate-data-fallback',
+      isPattern2A: false
+    };
+    
+    return pattern2ACache;
+  }
+
+  // FIXED: Single comprehensive log for Pattern 2A data access
+  logger.info('Pattern 2A immediate data initialized', createLogContext({
+    pattern: '2A-data-initialization',
+    userFirstName: data.userContext.first_name,
+    totalRecords: data.quickStats.totalRecords,
+    injectionAge: data.injectionTime,
+    hasAdminRole: data.appContext.has_admin_role,
+    dataSize: JSON.stringify(data).length
+  }));
+
+  // Cache the data for subsequent accesses
+  pattern2ACache = {
+    ...data,
+    isPattern2A: true
+  };
+
+  return pattern2ACache;
+};
+
+// FIXED: Add method to get access statistics (debug only)
+const getPattern2AStats = () => {
+  const currentTime = Date.now();
+  const timeSinceFirst = pattern2AFirstAccess ? currentTime - pattern2AFirstAccess : 0;
+  
+  return {
+    totalAccesses: pattern2AAccessCount,
+    timeSinceFirstMs: timeSinceFirst,
+    avgAccessInterval: timeSinceFirst > 0 ? timeSinceFirst / pattern2AAccessCount : 0,
+    isCached: !!pattern2ACache,
+    hasPerformanceIssue: pattern2AAccessCount > 5 && timeSinceFirst < 100
+  };
+};
+
 export const useUserContext = () => {
   const immediateData = useMemo(() => {
-    const data = (window as any).snImmediateData as ImmediateData | undefined;
+    const data = getPattern2AData();
     
-    if (!data) {
-      logger.warn('Pattern 2A immediate data not found', createLogContext({
-        pattern: '2A-missing-data',
-        windowSnImmediateData: !!(window as any).snImmediateData,
-        fallbackMode: true
+    // FIXED: Only log performance summary in debug mode and only after initial load
+    if (logger.isDebugEnabled() && pattern2AAccessCount > 1 && pattern2AAccessCount % 5 === 0) {
+      const stats = getPattern2AStats();
+      logger.info('Pattern 2A access summary', createLogContext({
+        pattern: '2A-access-summary',
+        ...stats
       }));
-      
-      // Fallback to traditional g_user if Pattern 2A data is missing
-      const fallbackUser = (window as any).g_user;
-      
-      // Create fallback data using factory functions and nullish coalescing
-      const fallbackData: ImmediateData & { isPattern2A: boolean } = {
-        userContext: createUserContext({
-          sys_id: fallbackUser?.userID,
-          user_name: fallbackUser?.userName,
-          display_name: fallbackUser?.getDisplayName?.(),
-          first_name: fallbackUser?.firstName ?? 'User',
-          last_name: fallbackUser?.lastName,
-          email: fallbackUser?.email,
-          roles: fallbackUser?.roles,
-          is_admin: false
-        }),
-        systemContext: createSystemContext({
-          current_time: new Date().toISOString(),
-          current_time_ms: Date.now().toString(),
-          debug_enabled: 'false'
-        }),
-        appContext: createAppContext({}),
-        quickStats: createQuickStats({}),
-        injectionTime: new Date().toISOString(),
-        pattern: '2A-immediate-data-fallback',
-        isPattern2A: false
-      };
-      
-      return fallbackData;
     }
-
-    logger.info('Pattern 2A immediate data accessed', createLogContext({
-      pattern: '2A-immediate-access',
-      userFirstName: data.userContext.first_name,
-      totalRecords: data.quickStats.totalRecords,
-      injectionAge: data.injectionTime,
-      hasAdminRole: data.appContext.has_admin_role
-    }));
-
-    return {
-      ...data,
-      isPattern2A: true
-    };
+    
+    return data;
   }, []);
 
   return immediateData;

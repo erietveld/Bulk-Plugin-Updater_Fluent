@@ -13,7 +13,7 @@ The Batch Plugin Updater is a comprehensive ServiceNow application designed to s
 - **Batch Processing**: Select and process multiple plugin updates simultaneously
 - **Interactive Dashboard**: Modern React-based interface with real-time updates
 - **Progress Tracking**: Monitor installation progress with detailed status information
-- **Theme Support**: Multiple UI themes including ServiceNow, Polaris, and custom themes
+- **Theme Support**: Multiple UI themes including custom themes
 - **Responsive Design**: Optimized for both desktop and mobile interfaces
 - **REST API Integration**: Robust backend services for update management
 
@@ -30,7 +30,7 @@ The Batch Plugin Updater is a comprehensive ServiceNow application designed to s
 ### Backend
 - **ServiceNow Fluent** - Domain-specific language for metadata definition
 - **Scripted REST APIs** - Custom API endpoints for update operations
-- **Business Rules** - Server-side logic for data processing
+- **Subflow** - Server-side logic for data processing
 - **Script Includes** - Reusable server-side code modules
 
 ### Infrastructure

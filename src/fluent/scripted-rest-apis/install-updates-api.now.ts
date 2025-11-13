@@ -71,9 +71,35 @@ RestApi({
         var outputs = result.getOutputs();
         var progressId = outputs['progress_id'];
         var statusMessage = outputs['status_message'];
+        var httpStatus = outputs['http_status']; // NEW: Get http_status from subflow
         
         // Log success for debugging
-        gs.info('Subflow executed successfully. Progress ID: ' + progressId + ', Status: ' + statusMessage);
+        gs.info('Subflow executed successfully. Progress ID: ' + progressId + ', Status: ' + statusMessage + ', HTTP Status: ' + httpStatus);
+        
+        // NEW: Check http_status for API failures
+        if (httpStatus && httpStatus != '200') {
+            var errorMessage = 'API call failed with HTTP status ' + httpStatus;
+            
+            // Special handling for authentication failures
+            if (httpStatus == '401') {
+                errorMessage = 'Authentication failed (HTTP 401). Please check the API user credentials in the subflow configuration.';
+                gs.error('Authentication failure in install updates: HTTP 401 - Check API user in subflow');
+            } else {
+                gs.error('Install updates API failure: HTTP ' + httpStatus + ' - ' + statusMessage);
+            }
+            
+            // Return error response with http_status information
+            response.setStatus(500);
+            response.setBody({
+                success: false,
+                error: 'API_FAILURE',
+                message: errorMessage,
+                http_status: httpStatus,
+                status_message: statusMessage,
+                timestamp: new GlideDateTime().toString()
+            });
+            return;
+        }
         
         // Return success response with progress tracking info
         response.setStatus(200);
@@ -81,6 +107,7 @@ RestApi({
             success: true,
             progress_id: progressId,
             status_message: statusMessage || 'Installation process started',
+            http_status: httpStatus || '200', // NEW: Include http_status in response
             app_count: appCount,
             apps_requested: appVersions,
             timestamp: new GlideDateTime().toString()

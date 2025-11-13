@@ -5,6 +5,7 @@
 // INSTALL UPDATES: Added installUpdates method for batch operations
 
 import { logger, createLogContext } from '../monitoring/logger';
+import { debugService } from '../services/debugService'; // NEW: For debug-only logging
 import type {
   ServiceNowRecord,
   ApiResponse,
@@ -25,6 +26,7 @@ interface InstallUpdatesResponse {
   success: boolean;
   progress_id: string;
   status_message: string;
+  http_status: string; // NEW: HTTP status from CICD API
   app_count: number;
   apps_requested: string;
   timestamp: string;
@@ -34,6 +36,8 @@ interface InstallUpdatesErrorResponse {
   success: false;
   error: string;
   message: string;
+  http_status?: string; // NEW: HTTP status from failed API call
+  status_message?: string; // NEW: Additional status info
   timestamp: string;
 }
 
@@ -75,18 +79,16 @@ class ServiceNowApiService {
           ...config.headers
         };
 
-        // DEBUG: Enhanced logging for API requests
-        logger.info(`🔍 API Request: ${config.method} ${config.url}`, createLogContext({
-          method: config.method,
-          url: config.url,
-          headers: Object.keys(headers)
-        }));
-
-        console.log('🔍 API Request Details:', {
-          method: config.method,
-          url: config.url,
-          params: config.params
-        });
+        // DEBUG: Enhanced logging for API requests (only in debug mode)
+        if (debugService.isDebugMode()) {
+          logger.info(`🔍 API Request: ${config.method} ${config.url}`, createLogContext({
+            method: config.method,
+            url: config.url,
+            headers: Object.keys(headers),
+            params: config.params,
+            data: config.data // FIXED: Add request payload for debugging
+          }));
+        }
 
         return { ...config, headers };
       },
@@ -144,17 +146,18 @@ class ServiceNowApiService {
 
     const queryString = new URLSearchParams(validParams).toString();
     const separator = baseUrl.includes('?') ? '&' : '?';
-    
     const finalUrl = `${baseUrl}${separator}${queryString}`;
     
-    // DEBUG: Log URL construction
-    console.log('🔍 URL Construction:', {
-      baseUrl,
-      params,
-      validParams,
-      queryString,
-      finalUrl
-    });
+    // DEBUG: Log URL construction (only in debug mode)
+    if (debugService.isDebugMode()) {
+      logger.info('🔍 URL Construction', createLogContext({
+        baseUrl,
+        params,
+        validParams,
+        queryString,
+        finalUrl
+      }));
+    }
     
     return finalUrl;
   }
@@ -305,11 +308,28 @@ class ServiceNowApiService {
       const response = await fetch(url, fetchOptions);
       clearTimeout(timeoutId);
 
+      // FIXED: Always try to parse response body for structured errors
+      const responseData = await response.json();
+
       if (!response.ok) {
+        // FIXED: Check if response body contains structured error information
+        if (responseData && responseData.result && responseData.result.success === false) {
+          const errorResult = responseData.result;
+          
+          // Create enhanced error with response body details
+          const enhancedError = new Error(`${errorResult.message || `HTTP ${response.status}: ${response.statusText}`}`) as any;
+          enhancedError.responseBody = errorResult;
+          enhancedError.httpStatus = errorResult.http_status;
+          enhancedError.statusMessage = errorResult.status_message;
+          enhancedError.errorCode = errorResult.error;
+          enhancedError.isFromResponseBody = true;
+          enhancedError.originalHttpStatus = response.status;
+          
+          throw enhancedError;
+        }
+        
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-
-      const responseData = await response.json();
       
       // ServiceNow API response format
       return {
@@ -403,15 +423,17 @@ class ServiceNowApiService {
     limit?: number,
     offset?: number
   ): Promise<ApiListResponse<T>> {
-    // DEBUG: Log exactly what parameters we received
-    console.log('🔍 getTableRecords called with:', {
-      table,
-      query,
-      fields,
-      fieldsLength: fields?.length,
-      limit,
-      offset
-    });
+    // DEBUG: Log exactly what parameters we received (only in debug mode)
+    if (debugService.isDebugMode()) {
+      logger.info('🔍 getTableRecords called', createLogContext({
+        table,
+        query,
+        fields,
+        fieldsLength: fields?.length,
+        limit,
+        offset
+      }));
+    }
 
     const params: Record<string, string | number> = {};
     
@@ -419,19 +441,27 @@ class ServiceNowApiService {
     if (fields?.length) {
       params.sysparm_fields = fields.join(',');
       
-      // DEBUG: Log the fields processing
-      console.log('🔍 Fields processing:', {
-        originalFields: fields,
-        joinedFields: fields.join(','),
-        hasDotWalkFields: fields.some(f => f.includes('.')),
-        dotWalkFields: fields.filter(f => f.includes('.'))
-      });
+      // DEBUG: Log the fields processing (only in debug mode)
+      if (debugService.isDebugMode()) {
+        logger.info('🔍 Fields processing', createLogContext({
+          originalFields: fields,
+          joinedFields: fields.join(','),
+          hasDotWalkFields: fields.some(f => f.includes('.')),
+          dotWalkFields: fields.filter(f => f.includes('.'))
+        }));
+      }
     }
     if (limit) params.sysparm_limit = limit;
     if (offset) params.sysparm_offset = offset;
 
-    // DEBUG: Log final params object
-    console.log('🔍 Final params object:', params);
+    // DEBUG: Log final params object (only in debug mode)
+    if (debugService.isDebugMode()) {
+      logger.info('🔍 Final params object', createLogContext({
+        table,
+        params,
+        paramCount: Object.keys(params).length
+      }));
+    }
 
     // Now use the generic params handling instead of manual URL building
     const response = await this.get<T[]>(`/api/now/table/${table}`, { params });
@@ -492,16 +522,44 @@ class ServiceNowApiService {
         apps: apps.join(',')
       };
 
+      // FIXED: Disable retries for install updates to prevent multiple API calls
       const response = await this.post<InstallUpdatesResponse | InstallUpdatesErrorResponse>(
         `/api/x_snc_store_upda_1/install_updates`,
-        requestData
+        requestData,
+        { retries: 0 } // No retries on any error
       );
 
       const result = response.result;
       
       if (!result.success) {
         const errorResult = result as InstallUpdatesErrorResponse;
-        throw new Error(`Install Updates API error: ${errorResult.error} - ${errorResult.message}`);
+        
+        // FIXED: Create enhanced error with response body details and proper logging
+        logger.info('Install Updates API returned success:false - creating enhanced error', createLogContext({
+          errorCode: errorResult.error,
+          httpStatus: errorResult.http_status,
+          statusMessage: errorResult.status_message,
+          message: errorResult.message,
+          timestamp: errorResult.timestamp
+        }));
+        
+        const enhancedError = new Error(`Install Updates API error: ${errorResult.message}`) as any;
+        enhancedError.responseBody = errorResult;
+        enhancedError.httpStatus = String(errorResult.http_status); // Ensure string type
+        enhancedError.statusMessage = errorResult.status_message || '';
+        enhancedError.errorCode = errorResult.error;
+        enhancedError.isFromResponseBody = true;
+        
+        logger.info('Enhanced error created with properties', createLogContext({
+          errorMessage: enhancedError.message,
+          hasResponseBody: !!enhancedError.responseBody,
+          httpStatus: enhancedError.httpStatus,
+          statusMessage: enhancedError.statusMessage,
+          errorCode: enhancedError.errorCode,
+          isFromResponseBody: enhancedError.isFromResponseBody
+        }));
+        
+        throw enhancedError;
       }
 
       const successResult = result as InstallUpdatesResponse;
@@ -519,15 +577,8 @@ class ServiceNowApiService {
     } catch (error) {
       const duration = performance.now() - startTime;
       
-      logger.error('Install updates failed', 
-        error instanceof Error ? error : new Error(String(error)),
-        createLogContext({
-          appCount: apps.length,
-          apps: apps.join(','),
-          duration: Math.round(duration)
-        })
-      );
-
+      // FIXED: Remove duplicate logging - API interceptor already logs the error
+      // Just re-throw to let upper layers handle it
       throw error;
     }
   }

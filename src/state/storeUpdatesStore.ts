@@ -472,6 +472,17 @@ export const useStoreUpdatesStore = create<StoreUpdatesState>()(
 
           const sourceStats = useCalculated ? calculatedStats : immediateStats;
 
+          // FIXED: Add null safety check for sourceStats
+          if (!sourceStats) {
+            logger.warn('No statistics source available', createLogContext({
+              pattern: 'stats-source-unavailable',
+              useCalculated,
+              hasCalculatedStats: !!calculatedStats,
+              hasImmediateStats: !!immediateStats
+            }));
+            return;
+          }
+
           const activeStats = {
             totalApplications: sourceStats.totalApplications,
             totalMajorUpdates: sourceStats.totalMajorUpdates,
@@ -487,34 +498,31 @@ export const useStoreUpdatesStore = create<StoreUpdatesState>()(
             hasStringCorruption: calculatedCorruption
           } as const;
 
-          logger.info('Context-aware hybrid statistics decision', createLogContext({
-            pattern: 'hybrid-stats-context-aware',
-            sourceUsed: activeStats.source,
-            isCalculatedPreferred: activeStats.isCalculatedPreferred,
-            hasPerformedDataActions: state.hasPerformedDataActions,
-            decisionReason: reason,
-            hasSignificantDifference: activeStats.hasSignificantDifference,
-            hasStringCorruption: activeStats.hasStringCorruption,
-            criticalCount: activeStats.criticalCount,
-            finalStats: {
-              major: activeStats.totalMajorUpdates,
-              minor: activeStats.totalMinorUpdates,
-              patch: activeStats.totalPatchUpdates,
-              applications: activeStats.totalApplications
-            },
-            pattern2AData: immediateStats ? {
-              total: immediateStats.totalApplications,
-              major: immediateStats.totalMajorUpdates,
-              minor: immediateStats.totalMinorUpdates,
-              patch: immediateStats.totalPatchUpdates
-            } : null,
-            pattern2CData: calculatedStats ? {
-              total: calculatedStats.totalApplications,
-              major: calculatedStats.totalMajorUpdates,
-              minor: calculatedStats.totalMinorUpdates,
-              patch: calculatedStats.totalPatchUpdates
-            } : null
-          }));
+          // FIXED: Reduce logging verbosity - only log when there are actual decisions or issues
+          if (logger.isDebugEnabled()) {
+            const shouldLog = 
+              useCalculated !== state.statistics.activeStats.isCalculatedPreferred || // Decision changed
+              significantDiff || // There's a significant difference to investigate
+              calculatedCorruption || // Data corruption detected
+              reason.includes('fallback') || // Fallback scenarios are interesting
+              reason.includes('post-action'); // Post-action decisions are interesting
+            
+            if (shouldLog) {
+              logger.info('Hybrid statistics decision', createLogContext({
+                pattern: 'hybrid-stats-decision',
+                sourceUsed: activeStats.source,
+                reason,
+                hasSignificantDifference: activeStats.hasSignificantDifference,
+                hasStringCorruption: activeStats.hasStringCorruption,
+                finalStats: {
+                  major: activeStats.totalMajorUpdates,
+                  minor: activeStats.totalMinorUpdates,
+                  patch: activeStats.totalPatchUpdates,
+                  applications: activeStats.totalApplications
+                }
+              }));
+            }
+          }
 
           set(state => ({
             statistics: {

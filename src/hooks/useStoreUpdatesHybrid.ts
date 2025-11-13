@@ -90,10 +90,12 @@ export const useStoreUpdatesServerState = () => {
           'available_version.source_app_id'      // EXISTING: source app ID for App Manager link
         ];
 
-        console.log('🔍 HYBRID: Fields being sent to API (with expandable details):', fieldsArray);
-        console.log('🔍 HYBRID: Dot-walked fields:', fieldsArray.filter(f => f.includes('.')));
-        console.log('🔍 HYBRID: NEW expandable fields:', ['application.install_date', 'application.short_description', 'application.version']);
-        console.log('🔍 HYBRID: Client-side filtering will be applied for batch_level=latest_version_level');
+        if (logger.isDebugEnabled()) {
+          logger.info('🔍 HYBRID: Fields being sent to API (with expandable details)', { fieldsArray });
+          logger.info('🔍 HYBRID: Dot-walked fields', { dotWalkedFields: fieldsArray.filter(f => f.includes('.')) });
+          logger.info('🔍 HYBRID: NEW expandable fields', { expandableFields: ['application.install_date', 'application.short_description', 'application.version'] });
+          logger.info('🔍 HYBRID: Client-side filtering will be applied for batch_level=latest_version_level');
+        }
 
         // FIXED: TypeScript error - provide full config with defaults for all required fields
         const response = await apiService.get<{
@@ -114,33 +116,49 @@ export const useStoreUpdatesServerState = () => {
         const rawRecords: any[] = responseData?.result || [];
         
         // DEBUG: Log response structure before client-side filtering
-        console.log('🔍 HYBRID: API Response (with expandable details):', {
-          totalRecords: rawRecords.length,
-          filterType: 'client-side',
-          filterCondition: 'batch_level=latest_version_level',
-          hasExpandableFields: true
-        });
-        
-        if (rawRecords.length > 0) {
-          const firstRecord = rawRecords[0];
-          if (firstRecord) {
-            const recordKeys = Object.keys(firstRecord);
-            
-            console.log('🔍 HYBRID: First record keys (with expandable details):', recordKeys);
-            console.log('🔍 HYBRID: Dot-walked keys found:', recordKeys.filter(k => k.includes('.')));
-            console.log('🔍 HYBRID: Sample record (pre-filter):', {
-              name: firstRecord.name || 'N/A',
-              'application.name': firstRecord['application.name'] || 'N/A',
-              batch_level: firstRecord.batch_level || 'N/A',
-              latest_version_level: firstRecord.latest_version_level || 'N/A',
-              willMatch: (firstRecord.batch_level && firstRecord.latest_version_level) ? 
-                        firstRecord.batch_level === firstRecord.latest_version_level : false
-            });
-            console.log('🔍 HYBRID: Sample expandable details fields:', {
-              'application.install_date': firstRecord['application.install_date'] || 'N/A',
-              'application.short_description': firstRecord['application.short_description'] || 'N/A',
-              'application.version': firstRecord['application.version'] || 'N/A',
-              'available_version.source_app_id': firstRecord['available_version.source_app_id'] || 'N/A'
+        if (logger.isDebugEnabled()) {
+          if (rawRecords.length > 0) {
+            const firstRecord = rawRecords[0];
+            if (firstRecord) {
+              const recordKeys = Object.keys(firstRecord);
+              
+              logger.info('🔍 HYBRID: API Response & Data Analysis', {
+                responseStats: {
+                  totalRecords: rawRecords.length,
+                  filterType: 'client-side',
+                  filterCondition: 'batch_level=latest_version_level',
+                  hasExpandableFields: true
+                },
+                recordKeys: recordKeys,
+                dotWalkedKeys: recordKeys.filter(k => k.includes('.')),
+                sampleRecord: {
+                  name: firstRecord.name || 'N/A',
+                  'application.name': firstRecord['application.name'] || 'N/A',
+                  batch_level: firstRecord.batch_level || 'N/A',
+                  latest_version_level: firstRecord.latest_version_level || 'N/A',
+                  willMatch: (firstRecord.batch_level && firstRecord.latest_version_level) ? 
+                            firstRecord.batch_level === firstRecord.latest_version_level : false
+                },
+                expandableFields: {
+                  'application.install_date': firstRecord['application.install_date'] || 'N/A',
+                  'application.short_description': firstRecord['application.short_description'] || 'N/A',
+                  'application.version': firstRecord['application.version'] || 'N/A',
+                  'available_version.source_app_id': firstRecord['available_version.source_app_id'] || 'N/A'
+                }
+              });
+            }
+          } else {
+            logger.info('🔍 HYBRID: API Response & Data Analysis', {
+              responseStats: {
+                totalRecords: rawRecords.length,
+                filterType: 'client-side',
+                filterCondition: 'batch_level=latest_version_level',
+                hasExpandableFields: true
+              },
+              recordKeys: [],
+              dotWalkedKeys: [],
+              sampleRecord: null,
+              expandableFields: null
             });
           }
         }
@@ -199,29 +217,25 @@ export const useStoreUpdatesServerState = () => {
           filterCondition: 'batch_level=latest_version_level'
         }));
 
-        console.log('🔍 HYBRID: Client-side filtering results (with expandable details):', {
-          totalFromAPI: allRecords.length,
-          afterFiltering: filteredRecords.length,
-          filterReduction: allRecords.length > 0 ? `${Math.round(((allRecords.length - filteredRecords.length) / allRecords.length) * 100)}%` : '0%',
-          recordsWithReferencedData: recordsWithReferencedData.length,
-          recordsWithExpandableData: recordsWithExpandableData.length
-        });
-        
-        if (filteredRecords.length > 0) {
-          const firstFiltered = filteredRecords[0];
-          if (firstFiltered) {
-            console.log('🔍 HYBRID: Sample filtered record (with expandable details):', {
-              name: firstFiltered.name || 'N/A',
-              application_name: firstFiltered.application_name || 'N/A',
-              // NEW expandable details
-              application_install_date: firstFiltered.application_install_date || 'N/A',
-              application_short_description: firstFiltered.application_short_description || 'N/A',
-              application_version: firstFiltered.application_version || 'N/A',
-              // For App Manager link
-              available_version_source_app_id: firstFiltered.available_version_source_app_id || 'N/A',
-              available_version_version: firstFiltered.available_version_version || 'N/A'
-            });
-          }
+        if (logger.isDebugEnabled()) {
+          logger.info('🔍 HYBRID: Filtering Results & Sample Data', {
+            filteringResults: {
+              totalFromAPI: allRecords.length,
+              afterFiltering: filteredRecords.length,
+              filterReduction: allRecords.length > 0 ? `${Math.round(((allRecords.length - filteredRecords.length) / allRecords.length) * 100)}%` : '0%',
+              recordsWithReferencedData: recordsWithReferencedData.length,
+              recordsWithExpandableData: recordsWithExpandableData.length
+            },
+            sampleFilteredRecord: filteredRecords.length > 0 && filteredRecords[0] ? {
+              name: filteredRecords[0].name || 'N/A',
+              application_name: filteredRecords[0].application_name || 'N/A',
+              application_install_date: filteredRecords[0].application_install_date || 'N/A',
+              application_short_description: filteredRecords[0].application_short_description || 'N/A',
+              application_version: filteredRecords[0].application_version || 'N/A',
+              available_version_source_app_id: filteredRecords[0].available_version_source_app_id || 'N/A',
+              available_version_version: filteredRecords[0].available_version_version || 'N/A'
+            } : null
+          });
         }
 
         // Return filtered records instead of all records
@@ -238,7 +252,7 @@ export const useStoreUpdatesServerState = () => {
           expandableDetailsAttempted: true
         }));
 
-        console.error('🔍 HYBRID: API Error with expandable details:', error);
+        logger.error('🔍 HYBRID: API Error with expandable details', error instanceof Error ? error : new Error(String(error)));
         throw error;
       }
     },

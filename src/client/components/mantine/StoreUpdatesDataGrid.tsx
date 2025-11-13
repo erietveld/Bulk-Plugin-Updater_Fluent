@@ -116,7 +116,7 @@ interface ExpandableRowDetailsProps {
   record: StoreUpdate;
 }
 
-const ExpandableRowDetails: React.FC<ExpandableRowDetailsProps> = ({ record }) => {
+const ExpandableRowDetails = React.memo<ExpandableRowDetailsProps>(({ record }) => {
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
   
@@ -180,7 +180,7 @@ const ExpandableRowDetails: React.FC<ExpandableRowDetailsProps> = ({ record }) =
       </Stack>
     </Box>
   );
-};
+});
 
 /**
  * Generic pagination component that can be reused across the application
@@ -197,7 +197,7 @@ interface PaginationProps {
   maxPagesToShow?: number;
 }
 
-const GenericPagination: React.FC<PaginationProps> = ({
+const GenericPagination = React.memo<PaginationProps>(({
   currentPage,
   totalPages,
   onPageClick,
@@ -298,7 +298,7 @@ const GenericPagination: React.FC<PaginationProps> = ({
       </Button>
     </Group>
   );
-};
+});
 
 /**
  * Enhanced Search Input Component with controlled state and minimum character requirement
@@ -310,7 +310,7 @@ interface EnhancedSearchInputProps {
   minCharacters?: number;
 }
 
-const EnhancedSearchInput: React.FC<EnhancedSearchInputProps> = ({
+const EnhancedSearchInput = React.memo<EnhancedSearchInputProps>(({
   onSearch,
   currentFilter,
   placeholder = "Search applications...",
@@ -420,7 +420,7 @@ const EnhancedSearchInput: React.FC<EnhancedSearchInputProps> = ({
       }
     />
   );
-};
+});
 
 /**
  * Helper function to get consistent row background colors across all themes
@@ -457,7 +457,7 @@ const getRowBackgroundColor = (
  * BUTTONS: Standardized to variant="light" styling
  * SMART CLEAR: Implements smart clearing strategy - no backend refetch for filter clearing
  */
-export const StoreUpdatesDataGrid: React.FC<StoreUpdatesDataGridProps> = ({
+export const StoreUpdatesDataGrid = React.memo<StoreUpdatesDataGridProps>(({
   filteringHook,
   paginationHook,
   selectionHook,
@@ -704,6 +704,19 @@ export const StoreUpdatesDataGrid: React.FC<StoreUpdatesDataGridProps> = ({
     return data.some(record => selectionHook.isRecordSelected(record.sys_id));
   }, [data, selectionHook]);
 
+  // Memoize active filters count for better performance
+  const activeFiltersInfo = useMemo(() => ({
+    hasActiveFilters: filteringHook.insights.hasActiveFilters,
+    activeFiltersCount: filteringHook.insights.activeFiltersCount, 
+    isFiltered: filteringHook.insights.isFiltered,
+    allRecordsCount: filteringHook.insights.allRecordsCount
+  }), [
+    filteringHook.insights.hasActiveFilters,
+    filteringHook.insights.activeFiltersCount,
+    filteringHook.insights.isFiltered,
+    filteringHook.insights.allRecordsCount
+  ]);
+
   // Enhanced search status for better UX
   const searchStatus = useMemo(() => {
     const hasSearch = filteringHook.filters.search.length > 0;
@@ -728,13 +741,13 @@ export const StoreUpdatesDataGrid: React.FC<StoreUpdatesDataGridProps> = ({
             <IconAlertCircle size={48} color="gray" />
             <Text size="lg" fw={600} c="dimmed">No Store Updates Found</Text>
             <Text c="dimmed" ta="center">
-              {filteringHook.insights.hasActiveFilters
+              {activeFiltersInfo.hasActiveFilters
                 ? 'No updates match your current filters. Try adjusting your search criteria.'
                 : 'No store updates are currently available. Check back later or refresh to scan for new updates.'
               }
             </Text>
             <Group gap="md">
-              {filteringHook.insights.hasActiveFilters && (
+              {activeFiltersInfo.hasActiveFilters && (
                 <Button 
                   variant="light" 
                   onClick={() => {
@@ -785,14 +798,14 @@ export const StoreUpdatesDataGrid: React.FC<StoreUpdatesDataGridProps> = ({
             
             <Text size="sm" c="dimmed">
               {data.length} of {paginationHook.totalRecords} updates
-              {filteringHook.insights.isFiltered && (
-                <> (from {filteringHook.insights.allRecordsCount} total)</>
+              {activeFiltersInfo.isFiltered && (
+                <> (from {activeFiltersInfo.allRecordsCount} total)</>
               )}
             </Text>
             
-            {filteringHook.insights.hasActiveFilters && (
+            {activeFiltersInfo.hasActiveFilters && (
               <Badge color="blue" variant="light" size="sm">
-                {filteringHook.insights.activeFiltersCount} filter{filteringHook.insights.activeFiltersCount !== 1 ? 's' : ''} active
+                {activeFiltersInfo.activeFiltersCount} filter{activeFiltersInfo.activeFiltersCount !== 1 ? 's' : ''} active
               </Badge>
             )}
             
@@ -922,8 +935,8 @@ export const StoreUpdatesDataGrid: React.FC<StoreUpdatesDataGridProps> = ({
           <Text size="sm" c="dimmed">
             Page {paginationHook.page} of {paginationHook.totalPages} • 
             Showing {paginationHook.startRecord} to {paginationHook.endRecord} of {paginationHook.totalRecords} records
-            {filteringHook.insights.isFiltered && (
-              <> (filtered from {filteringHook.insights.allRecordsCount} total)</>
+            {activeFiltersInfo.isFiltered && (
+              <> (filtered from {activeFiltersInfo.allRecordsCount} total)</>
             )}
           </Text>
           
@@ -1010,6 +1023,6 @@ export const StoreUpdatesDataGrid: React.FC<StoreUpdatesDataGridProps> = ({
       )}
     </Stack>
   );
-};
+});
 
 export default StoreUpdatesDataGrid;

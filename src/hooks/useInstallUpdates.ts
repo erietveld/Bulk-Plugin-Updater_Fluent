@@ -10,6 +10,7 @@ import { apiService } from '../api/apiService';
 import { useBatchProgressStore } from '../stores/batchProgressStore';
 import { logger, createLogContext } from '../monitoring/logger';
 import { useNotifications } from './useNotifications';
+import { useApiErrorModal } from './useApiErrorModal'; // NEW: For enhanced error handling
 import type { useStoreUpdatesSelection } from './useStoreUpdatesSelection';
 import { storeUpdatesQueryKeys } from './useStoreUpdatesHybrid'; // NEW: For correct cache invalidation
 
@@ -18,6 +19,7 @@ export interface InstallUpdatesResponse {
   success: boolean;
   progress_id: string;
   status_message: string;
+  http_status: string; // NEW: HTTP status from CICD API
   app_count: number;
   apps_requested: string;
   timestamp: string;
@@ -28,6 +30,8 @@ export interface InstallUpdatesError {
   success: false;
   error: string;
   message: string;
+  http_status?: string; // NEW: HTTP status from failed API call
+  status_message?: string; // NEW: Additional status info
   timestamp: string;
 }
 
@@ -78,7 +82,8 @@ export const useInstallUpdates = (
   // Dependencies
   const queryClient = useQueryClient();
   const batchProgressStore = useBatchProgressStore();
-  const { showSuccess, showError, showInfo } = useNotifications();
+  const { showSuccess, showError, showInfo } = useNotifications(); // showError for non-API errors
+  const { showHttpError, showAuthError, showServerError, modalOpened, modalError, closeModal } = useApiErrorModal(); // NEW: Enhanced error handling
   
   // Progress polling ref
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -227,10 +232,14 @@ export const useInstallUpdates = (
           batchProgressStore.errorOperation('Installation failed', progressState);
           stopProgressPolling();
           
-          showError({
-            title: 'Installation Failed',
-            message: errorMessage
-          });
+          // NEW: Show enhanced error modal instead of simple toast
+          showHttpError(
+            'Installation Failed',
+            errorMessage,
+            progressState.status || 'unknown',
+            progressState.status_message,
+            progressId
+          );
 
           logger.error('Installation failed', 
             new Error(errorMessage),
@@ -286,8 +295,63 @@ export const useInstallUpdates = (
       logger.info('Install updates API call successful', createLogContext({
         progressId: response.progress_id,
         appCount: response.app_count,
-        statusMessage: response.status_message
+        statusMessage: response.status_message,
+        httpStatus: response.http_status // NEW: Log http_status
       }));
+
+      // NEW: Check http_status for potential issues even on "successful" API calls
+      if (response.http_status && response.http_status !== '200') {
+        let errorMessage = `Installation API returned HTTP status ${response.http_status}`;
+        
+        // Special handling for authentication failures
+        if (response.http_status === '401') {
+          showAuthError(
+            'Authentication failed (HTTP 401). Please check the API user credentials in the Subflow configuration.',
+            response.progress_id
+          );
+        } else if (response.http_status === '403') {
+          showHttpError(
+            'Permission Error',
+            'Access denied (HTTP 403). The API user may not have sufficient permissions to perform this operation.',
+            response.http_status,
+            response.status_message,
+            response.progress_id
+          );
+        } else if (response.http_status === '500') {
+          showServerError(
+            'Internal server error occurred during installation. Please try again or contact support.',
+            response.progress_id
+          );
+        } else {
+          // Other HTTP error codes
+          errorMessage = `Installation failed with HTTP status ${response.http_status}. ${response.status_message || ''}`;
+          
+          showHttpError(
+            'Installation Failed',
+            errorMessage,
+            response.http_status,
+            response.status_message,
+            response.progress_id
+          );
+        }
+        
+        // Update store with error
+        batchProgressStore.errorOperation(errorMessage, {
+          http_status: response.http_status,
+          status_message: response.status_message
+        });
+        
+        logger.error('Install updates failed due to HTTP status', 
+          new Error(errorMessage),
+          createLogContext({
+            progressId: response.progress_id,
+            httpStatus: response.http_status,
+            statusMessage: response.status_message
+          })
+        );
+        
+        return; // Don't proceed with progress polling
+      }
 
       // Update store with progress worker ID
       batchProgressStore.setProgressWorkerId(response.progress_id);
@@ -304,23 +368,79 @@ export const useInstallUpdates = (
       onSuccess?.(response);
     },
     onError: (error: any, selectedIds: string[]) => {
-      logger.error('Install updates mutation failed',
-        error instanceof Error ? error : new Error(String(error)),
-        createLogContext({
-          selectedCount: selectedIds.length,
-          errorMessage: error.message
-        })
-      );
+      // FIXED: Reduced logging verbosity - only log user-facing error summary to avoid duplicates
+      logger.info('Displaying error to user', createLogContext({
+        selectedCount: selectedIds.length,
+        httpStatus: error.responseBody?.http_status || error.httpStatus || 'unknown',
+        errorType: error.responseBody?.error || error.errorCode || 'unknown'
+      }));
 
-      // Update store with error
-      batchProgressStore.errorOperation(
-        error.message || 'Installation failed',
-        error
-      );
+      // FIXED: Enhanced error handling with better logging and undefined handling
+      let errorTitle = 'Installation Failed';
+      let errorMessage = 'Failed to start installation process';
+      let httpStatus: string | undefined;
+      let statusMessage: string | undefined;
+      
+      // FIXED: Check if error contains structured response body information with detailed logging
+      if (error.responseBody) {
+        // Use the actual error details from the response body
+        errorMessage = error.responseBody.message || error.message || errorMessage;
+        httpStatus = String(error.responseBody.http_status || error.httpStatus || '');
+        statusMessage = error.responseBody.status_message || error.statusMessage || '';
+      } else if (error.httpStatus) {
+        // Fallback to error properties if no response body
+        httpStatus = String(error.httpStatus);
+        statusMessage = error.statusMessage || '';
+        errorMessage = error.message || errorMessage;
+      } else {
+        errorMessage = error.message || errorMessage;
+      }
 
-      showError({
-        title: 'Installation Failed',
-        message: error.message || 'Failed to start installation process'
+      // FIXED: Display appropriate error modal based on the actual HTTP status from response body
+      if (httpStatus === '401') {
+        showAuthError(
+          errorMessage,
+          undefined // Progress ID not available at this stage
+        );
+      } else if (httpStatus === '403') {
+        showHttpError(
+          'Permission Error',
+          errorMessage,
+          httpStatus,
+          statusMessage
+        );
+      } else if (httpStatus === '404') {
+        showHttpError(
+          'Service Not Found',
+          errorMessage,
+          httpStatus,
+          statusMessage
+        );
+      } else if (httpStatus === '500' || error.message.includes('HTTP 500')) {
+        showServerError(
+          errorMessage
+        );
+      } else if (error.message && error.message.includes('Failed to fetch')) {
+        showHttpError(
+          'Connection Error',
+          'Network connection failed. Please check your connection and try again.'
+        );
+      } else {
+        // Generic error - use the enhanced modal with available details
+        showHttpError(
+          errorTitle,
+          errorMessage,
+          httpStatus || undefined, // Don't pass empty string
+          statusMessage || undefined // Don't pass empty string
+        );
+      }
+
+      // Update store with error - use enhanced error message
+      batchProgressStore.errorOperation(errorMessage, {
+        httpStatus,
+        statusMessage,
+        errorCode: error.responseBody?.error || error.errorCode,
+        isFromResponseBody: error.isFromResponseBody || false
       });
 
       // Call custom error handler
@@ -392,12 +512,20 @@ export const useInstallUpdates = (
     startProgressPolling,
     stopProgressPolling,
     
+    // API Error Modal state (NEW: expose modal state for rendering)
+    apiErrorModal: {
+      opened: modalOpened,
+      error: modalError,
+      onClose: closeModal
+    },
+    
     // Actions
     reset: useCallback(() => {
       installUpdatesMutation.reset();
       batchProgressStore.resetOperation();
       stopProgressPolling();
       hideConfirmationModal();
-    }, [installUpdatesMutation.reset, batchProgressStore.resetOperation, stopProgressPolling, hideConfirmationModal])
+      closeModal(); // NEW: Also close API error modal on reset
+    }, [installUpdatesMutation.reset, batchProgressStore.resetOperation, stopProgressPolling, hideConfirmationModal, closeModal])
   };
 };
