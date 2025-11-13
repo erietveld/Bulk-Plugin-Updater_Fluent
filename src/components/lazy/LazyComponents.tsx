@@ -44,6 +44,12 @@ export const CDNResourceDebugger = lazy(() =>
   }))
 );
 
+export const ValidationStatusCard = lazy(() => 
+  import('../../client/components/validation/ValidationStatusCard').then(module => ({ 
+    default: module.ValidationStatusCard 
+  }))
+);
+
 // Higher-order component for consistent loading states
 export const withLazyLoading = <T extends object>(
   LazyComponent: React.LazyExoticComponent<React.ComponentType<T>>,

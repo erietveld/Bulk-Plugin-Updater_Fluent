@@ -13,13 +13,69 @@ RestApi({
   consumes: 'application/json',
   produces: 'application/json',
   routes: [{
-    $id: Now.ID['install_updates_route'],
+    $id: Now.ID['install_updates_route_get'],
+    name: 'Validate System Status',
+    method: 'GET',
+    path: '/',
+    script: `
+(function process(request, response) {
+    try {
+        // Query by NAME (instance-portable) instead of sys_id
+        var flow = new GlideRecord('sys_hub_flow');
+        flow.addQuery('name', 'Process Plugin Updates');
+        flow.query();
+        var flowExists = flow.hasNext();
+        
+        var cred = new GlideRecord('basic_auth_credentials');
+        cred.addQuery('name', 'Plugin CICD Auth');
+        cred.query();
+        var credExists = cred.hasNext();
+        
+        var alias = new GlideRecord('sys_alias');
+        alias.addQuery('name', 'Plugin CICD Auth');
+        alias.query();
+        var aliasExists = alias.hasNext();
+        
+        // Return validation status
+        response.setStatus(200);
+        response.setBody({
+            validation: {
+                flow_exists: flowExists,
+                credentials_exist: credExists, 
+                alias_exists: aliasExists,
+                all_ready: flowExists && credExists && aliasExists
+            },
+            timestamp: new GlideDateTime().toString()
+        });
+    } catch (ex) {
+        var errorMessage = ex.getMessage ? ex.getMessage() : ex.toString();
+        gs.error('Validation API error: ' + errorMessage, ex);
+        
+        response.setStatus(500);
+        response.setBody({
+            validation: {
+                flow_exists: false,
+                credentials_exist: false,
+                alias_exists: false,
+                all_ready: false
+            },
+            error: errorMessage,
+            timestamp: new GlideDateTime().toString()
+        });
+    }
+})(request, response);
+    `,
+    authorization: true,
+    authentication: true,
+    active: true,
+    short_description: 'Check system validation status for plugin updates'
+  }, {
+    $id: Now.ID['install_updates_route_post'],
     name: 'Install Updates',
     method: 'POST',
     path: '/',
     script: `
 (function process(request, response) {
-    
     try {
         // Parse request body
         var requestBody = request.body;
@@ -129,7 +185,6 @@ RestApi({
             timestamp: new GlideDateTime().toString()
         });
     }
-    
 })(request, response);
     `,
     authorization: true,

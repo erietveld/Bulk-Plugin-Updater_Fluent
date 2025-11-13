@@ -23,6 +23,7 @@ import {
   NavigationHeader,
   FloatingThemeSwitcher,
   CDNResourceDebugger,
+  ValidationStatusCard,
   ComponentLoadingFallback
 } from '../components/lazy/LazyComponents';
 
@@ -31,6 +32,9 @@ import {
   AppErrorBoundary, 
   FeatureErrorBoundary 
 } from '../error/ErrorBoundary';
+
+// Import validation hook
+import useValidationStatus from '../hooks/useValidationStatus';
 
 // Enhanced color scheme manager with system preference detection
 const colorSchemeManager = createEnhancedColorSchemeManager();
@@ -48,6 +52,9 @@ const AppContent: React.FC = () => {
   const { currentTheme, switchTheme, isChanging } = useThemeManagement();
   const performanceMetrics = usePerformanceTracking();
   const debugMode = isDebugMode();
+  
+  // Get validation status (only fetches if URL parameter is present)
+  const validationStatus = useValidationStatus();
 
   // Create query client with memoization to prevent recreation
   const queryClient = useMemo(() => {
@@ -118,6 +125,20 @@ const AppContent: React.FC = () => {
               <NavigationHeader />
             </Suspense>
           </FeatureErrorBoundary>
+          
+          {/* Validation Status (only shows when URL parameter check_status=true) */}
+          {validationStatus.shouldShow && (
+            <FeatureErrorBoundary featureName="ValidationStatus">
+              <Suspense fallback={<ComponentLoadingSpinner />}>
+                <ValidationStatusCard
+                  validationData={validationStatus.validationData}
+                  loading={validationStatus.loading}
+                  error={validationStatus.error}
+                  onRefresh={validationStatus.refetch}
+                />
+              </Suspense>
+            </FeatureErrorBoundary>
+          )}
           
           {/* Main Dashboard */}
           <FeatureErrorBoundary featureName="StoreUpdatesDashboard">

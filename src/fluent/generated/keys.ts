@@ -298,6 +298,10 @@ declare global {
                         table: 'sys_scope_privilege'
                         id: 'ae86bbbdfbc13a14e80bf602beefdc3b'
                     }
+                    alias_plugin_cicd_auth: {
+                        table: 'sys_alias'
+                        id: '627be2e3fb49b6105543f4c69eefdcab'
+                    }
                     'application-manager-dashboard': {
                         table: 'sys_ui_page'
                         id: '00ad40b3a6ac490e85e273d17f54f82b'
@@ -401,6 +405,10 @@ declare global {
                         table: 'sys_scope_privilege'
                         id: 'cf51db9efb4dbe14e80bf602beefdc78'
                     }
+                    cred_plugin_cicd_auth: {
+                        table: 'basic_auth_credentials'
+                        id: 'a8cb2627fb49b6105543f4c69eefdc09'
+                    }
                     d1ed2b7dfb413a14e80bf602beefdcf6: {
                         table: 'sys_hub_flow_input'
                         id: 'd1ed2b7dfb413a14e80bf602beefdcf6'
@@ -491,6 +499,15 @@ declare global {
                         id: 'fc4cb45bfb0d72105543f4c69eefdce2'
                         deleted: true
                     }
+                    flow_process_plugin_updates: {
+                        table: 'sys_hub_flow'
+                        id: 'fc2cbc1bfb0d72105543f4c69eefdca0'
+                    }
+                    FlowCredentialsStatusChecker: {
+                        table: 'sys_script_include'
+                        id: 'f5202fff42b6428b82e0bcf320afebd6'
+                        deleted: true
+                    }
                     install_updates_api: {
                         table: 'sys_ws_definition'
                         id: 'bb5cde6b32984e9ba979d0c8b5cadf9f'
@@ -498,10 +515,24 @@ declare global {
                     install_updates_route: {
                         table: 'sys_ws_operation'
                         id: '3a4f31c6a4f544538c71325184030a89'
+                        deleted: true
+                    }
+                    install_updates_route_get: {
+                        table: 'sys_ws_operation'
+                        id: '29a3712b7a754d6bbd1a2de079b3d374'
+                    }
+                    install_updates_route_post: {
+                        table: 'sys_ws_operation'
+                        id: 'f8cb56e1c0564124942f3b679457d592'
                     }
                     package_json: {
                         table: 'sys_module'
                         id: 'ef1c553d55054e91915714e779b389c0'
+                    }
+                    'src_server_script-includes_flow-credentials-status-checker_js': {
+                        table: 'sys_module'
+                        id: '91fe36f53561445e81113713a1ce79eb'
+                        deleted: true
                     }
                     'src_server_script-includes_store-updates-processor_js': {
                         table: 'sys_module'
@@ -514,6 +545,19 @@ declare global {
                     'store-updates-processor': {
                         table: 'sys_script_include'
                         id: '94b42c61cb904689b43d2c248968fdbd'
+                    }
+                    test_status_check: {
+                        table: 'sys_script_fix'
+                        id: '7986ad4a7de7404c87a1fca88cd85ba5'
+                        deleted: true
+                    }
+                    'x_snc_store_upda_1/ActionIcon-BL-Jknma': {
+                        table: 'sys_ux_lib_asset'
+                        id: 'e7d5ea92bf7445d08ba47ae8439daac6'
+                    }
+                    'x_snc_store_upda_1/ActionIcon-BL-Jknma.js.map': {
+                        table: 'sys_ux_lib_asset'
+                        id: '53ad4ffe583a4bfbb5281b0049fbed6d'
                     }
                     'x_snc_store_upda_1/application-manager': {
                         table: 'sys_ux_lib_asset'
@@ -625,6 +669,14 @@ declare global {
                         id: '942e5101c7754aff91bcc33a3dc27d1c'
                         deleted: true
                     }
+                    'x_snc_store_upda_1/CDNResourceDebugger-CZryPSj6': {
+                        table: 'sys_ux_lib_asset'
+                        id: '2986b4b2c78846c4b4736f56deddb191'
+                    }
+                    'x_snc_store_upda_1/CDNResourceDebugger-CZryPSj6.js.map': {
+                        table: 'sys_ux_lib_asset'
+                        id: '164b088dfbaa44b2b1657234084edab1'
+                    }
                     'x_snc_store_upda_1/CDNResourceDebugger-D_78tpIY': {
                         table: 'sys_ux_lib_asset'
                         id: 'd67ba1d764e2442ead3b26c39d746cf6'
@@ -638,12 +690,12 @@ declare global {
                     'x_snc_store_upda_1/CDNResourceDebugger-DjFoKT2B': {
                         table: 'sys_ux_lib_asset'
                         id: 'd612425e34a645e08dd7b39f53f98f54'
-                        deleted: false
+                        deleted: true
                     }
                     'x_snc_store_upda_1/CDNResourceDebugger-DjFoKT2B.js.map': {
                         table: 'sys_ux_lib_asset'
                         id: 'a30d323a85ff44f1a9ae07cc4f055c23'
-                        deleted: false
+                        deleted: true
                     }
                     'x_snc_store_upda_1/CDNResourceDebugger-Dm06yGgR': {
                         table: 'sys_ux_lib_asset'
@@ -674,6 +726,14 @@ declare global {
                         table: 'sys_ux_lib_asset'
                         id: 'ad25f675ef1a417eb67bc62d70feda39'
                         deleted: true
+                    }
+                    'x_snc_store_upda_1/ColorSchemeToggle-B9pbsXRU': {
+                        table: 'sys_ux_lib_asset'
+                        id: '1158da3b659a4662ae87fdaacd3ecb93'
+                    }
+                    'x_snc_store_upda_1/ColorSchemeToggle-B9pbsXRU.js.map': {
+                        table: 'sys_ux_lib_asset'
+                        id: '6f95532818f74898a8a38b7c68511dc1'
                     }
                     'x_snc_store_upda_1/ColorSchemeToggle-BgvqmqoW': {
                         table: 'sys_ux_lib_asset'
@@ -738,12 +798,12 @@ declare global {
                     'x_snc_store_upda_1/ColorSchemeToggle-CJSSWokG': {
                         table: 'sys_ux_lib_asset'
                         id: 'f82064ea00b345d79a22a800af565484'
-                        deleted: false
+                        deleted: true
                     }
                     'x_snc_store_upda_1/ColorSchemeToggle-CJSSWokG.js.map': {
                         table: 'sys_ux_lib_asset'
                         id: '8e95438cd8b84da2ad64ae4579fbbe88'
-                        deleted: false
+                        deleted: true
                     }
                     'x_snc_store_upda_1/ColorSchemeToggle-CvhYgjrp': {
                         table: 'sys_ux_lib_asset'
@@ -795,6 +855,14 @@ declare global {
                         id: 'a5a62366a8864cb4921f3194562b94aa'
                         deleted: true
                     }
+                    'x_snc_store_upda_1/DevelopmentDebugPanel-2KhsoALA': {
+                        table: 'sys_ux_lib_asset'
+                        id: '7b0824bef29142f298cd34d84d6a9547'
+                    }
+                    'x_snc_store_upda_1/DevelopmentDebugPanel-2KhsoALA.js.map': {
+                        table: 'sys_ux_lib_asset'
+                        id: '86c712ba72ad4488896e53786937f376'
+                    }
                     'x_snc_store_upda_1/DevelopmentDebugPanel-BTR-x7KV': {
                         table: 'sys_ux_lib_asset'
                         id: '40a9b155a45248b09b862e26a1b26c1b'
@@ -828,12 +896,12 @@ declare global {
                     'x_snc_store_upda_1/DevelopmentDebugPanel-DAuzjwxN': {
                         table: 'sys_ux_lib_asset'
                         id: '9b8bb67d97ca4a25ba3f9448176da28b'
-                        deleted: false
+                        deleted: true
                     }
                     'x_snc_store_upda_1/DevelopmentDebugPanel-DAuzjwxN.js.map': {
                         table: 'sys_ux_lib_asset'
                         id: '2faf5918406d457ebc98ca87de205e7a'
-                        deleted: false
+                        deleted: true
                     }
                     'x_snc_store_upda_1/DevelopmentDebugPanel-DbmMqhQX': {
                         table: 'sys_ux_lib_asset'
@@ -956,12 +1024,12 @@ declare global {
                     'x_snc_store_upda_1/FloatingThemeSwitcher-BOAP7vIe': {
                         table: 'sys_ux_lib_asset'
                         id: '54013e995d9c44cf886e3845862320b1'
-                        deleted: false
+                        deleted: true
                     }
                     'x_snc_store_upda_1/FloatingThemeSwitcher-BOAP7vIe.js.map': {
                         table: 'sys_ux_lib_asset'
                         id: '6d69a52a3b2041d88c5d74cc91a0ce21'
-                        deleted: false
+                        deleted: true
                     }
                     'x_snc_store_upda_1/FloatingThemeSwitcher-C3WXJRZi': {
                         table: 'sys_ux_lib_asset'
@@ -1073,6 +1141,14 @@ declare global {
                         id: 'f6fadf09babf4576842d8eba3c4b3be4'
                         deleted: true
                     }
+                    'x_snc_store_upda_1/FloatingThemeSwitcher-D6Hsowoz': {
+                        table: 'sys_ux_lib_asset'
+                        id: '7945f4d479db4392a688a322e28dc33a'
+                    }
+                    'x_snc_store_upda_1/FloatingThemeSwitcher-D6Hsowoz.js.map': {
+                        table: 'sys_ux_lib_asset'
+                        id: '84a390816b244a4385a95e95bf1c2f17'
+                    }
                     'x_snc_store_upda_1/FloatingThemeSwitcher-Db-QPk_8': {
                         table: 'sys_ux_lib_asset'
                         id: '7f5fcc4291f649338c610aa594e1e3ab'
@@ -1123,6 +1199,14 @@ declare global {
                         id: 'c56a1147515540798355211caf02ab55'
                         deleted: true
                     }
+                    'x_snc_store_upda_1/IconAlertTriangle-BpDfmZE8': {
+                        table: 'sys_ux_lib_asset'
+                        id: '92cec490b5164ac1914594499eebdc08'
+                    }
+                    'x_snc_store_upda_1/IconAlertTriangle-BpDfmZE8.js.map': {
+                        table: 'sys_ux_lib_asset'
+                        id: 'e896ab9a56b54fd69741183dc4d875d4'
+                    }
                     'x_snc_store_upda_1/IconAlertTriangle-fA43dmju': {
                         table: 'sys_ux_lib_asset'
                         id: 'b89cfc89593d4832bd705a17a42a43ca'
@@ -1143,15 +1227,23 @@ declare global {
                         id: '7f884d9e3d574ef1846d2a646a77e6d9'
                         deleted: true
                     }
+                    'x_snc_store_upda_1/IconChartBar-Cf71rIe8': {
+                        table: 'sys_ux_lib_asset'
+                        id: '6b4d34ad63ea4ddaabc88c93cacf4dcc'
+                    }
+                    'x_snc_store_upda_1/IconChartBar-Cf71rIe8.js.map': {
+                        table: 'sys_ux_lib_asset'
+                        id: '386011f9d88e48588ef038461927ffcd'
+                    }
                     'x_snc_store_upda_1/IconChartBar-DaFiuzFm': {
                         table: 'sys_ux_lib_asset'
                         id: '3844ff03b0be4a5c86b09f8040d5dd57'
-                        deleted: false
+                        deleted: true
                     }
                     'x_snc_store_upda_1/IconChartBar-DaFiuzFm.js.map': {
                         table: 'sys_ux_lib_asset'
                         id: '2a070708866641e287c6950d7cb491d6'
-                        deleted: false
+                        deleted: true
                     }
                     'x_snc_store_upda_1/IconChartBar-DIKityga': {
                         table: 'sys_ux_lib_asset'
@@ -1276,12 +1368,12 @@ declare global {
                     'x_snc_store_upda_1/IconMoon-CD7rPAT4': {
                         table: 'sys_ux_lib_asset'
                         id: '7bb93cbe6a4e45debabce7f65a89a0d5'
-                        deleted: false
+                        deleted: true
                     }
                     'x_snc_store_upda_1/IconMoon-CD7rPAT4.js.map': {
                         table: 'sys_ux_lib_asset'
                         id: 'a9d445ca8f4c405491fea626f58e5990'
-                        deleted: false
+                        deleted: true
                     }
                     'x_snc_store_upda_1/IconMoon-CGlJRFyN': {
                         table: 'sys_ux_lib_asset'
@@ -1313,6 +1405,14 @@ declare global {
                         id: '3be658fcaf8045e9a83204aa1e93b053'
                         deleted: true
                     }
+                    'x_snc_store_upda_1/IconMoon-Eadnxmd2': {
+                        table: 'sys_ux_lib_asset'
+                        id: 'c9e68b2e95334aabb1c828d92a2824d3'
+                    }
+                    'x_snc_store_upda_1/IconMoon-Eadnxmd2.js.map': {
+                        table: 'sys_ux_lib_asset'
+                        id: '059d0e97ba5c4411bf6fb2d931784b4a'
+                    }
                     'x_snc_store_upda_1/IconMoon-L98tjPAC': {
                         table: 'sys_ux_lib_asset'
                         id: '4020eed6aed94113a3cdb95d51e014b2'
@@ -1343,6 +1443,14 @@ declare global {
                         id: '71797ca4906d44c080b5f7fd0e79983a'
                         deleted: true
                     }
+                    'x_snc_store_upda_1/IconRefresh-BFwi8r-D': {
+                        table: 'sys_ux_lib_asset'
+                        id: '1b89245839aa4f1780ad9cf3f0cf3c4b'
+                    }
+                    'x_snc_store_upda_1/IconRefresh-BFwi8r-D.js.map': {
+                        table: 'sys_ux_lib_asset'
+                        id: 'fb704b127614430caffde8ff7e00ce4c'
+                    }
                     'x_snc_store_upda_1/IconRefresh-BVDcu20B': {
                         table: 'sys_ux_lib_asset'
                         id: 'e82b00ae0c994fb1a33a44dc604f5d06'
@@ -1362,6 +1470,14 @@ declare global {
                         table: 'sys_ux_lib_asset'
                         id: 'b1d0bb764736484bae6f3e0b09d0c7ab'
                         deleted: true
+                    }
+                    'x_snc_store_upda_1/IconSettings-BhFniKEX': {
+                        table: 'sys_ux_lib_asset'
+                        id: 'ae1d4b3508d9499098247f440919e1f3'
+                    }
+                    'x_snc_store_upda_1/IconSettings-BhFniKEX.js.map': {
+                        table: 'sys_ux_lib_asset'
+                        id: '50453923d4c643d4b56851bd39402500'
                     }
                     'x_snc_store_upda_1/IconSettings-CMho8WGy': {
                         table: 'sys_ux_lib_asset'
@@ -1452,6 +1568,14 @@ declare global {
                         table: 'sys_ux_lib_asset'
                         id: '26093c6c2fec4c83991bdb341d49ab27'
                         deleted: true
+                    }
+                    'x_snc_store_upda_1/IconX-g0D52mG7': {
+                        table: 'sys_ux_lib_asset'
+                        id: '3c83b7ac2eff4189a262d3eb8fe3112a'
+                    }
+                    'x_snc_store_upda_1/IconX-g0D52mG7.js.map': {
+                        table: 'sys_ux_lib_asset'
+                        id: 'b2e34a49fda34625902dbd9edbec4e8a'
                     }
                     'x_snc_store_upda_1/main': {
                         table: 'sys_ux_lib_asset'
@@ -1581,6 +1705,14 @@ declare global {
                         id: '5ba42738918f4aa3b7067a17385f55ee'
                         deleted: true
                     }
+                    'x_snc_store_upda_1/NavigationHeader-CjGPgAlj': {
+                        table: 'sys_ux_lib_asset'
+                        id: '079c68fad6d74a7b96a7c88e7266e10f'
+                    }
+                    'x_snc_store_upda_1/NavigationHeader-CjGPgAlj.js.map': {
+                        table: 'sys_ux_lib_asset'
+                        id: '67d64342aadc43df8f0e5405d16f4e5b'
+                    }
                     'x_snc_store_upda_1/NavigationHeader-CZ5JAqR9': {
                         table: 'sys_ux_lib_asset'
                         id: 'a7494e2944724c00bf0253503ff83bc3'
@@ -1694,12 +1826,12 @@ declare global {
                     'x_snc_store_upda_1/NavigationHeader-U_1e67OZ': {
                         table: 'sys_ux_lib_asset'
                         id: 'cc64cf71cc6744f399f356e6839a3ef7'
-                        deleted: false
+                        deleted: true
                     }
                     'x_snc_store_upda_1/NavigationHeader-U_1e67OZ.js.map': {
                         table: 'sys_ux_lib_asset'
                         id: '538ab0a92ca946b4abb9aa1a2b69b6ee'
-                        deleted: false
+                        deleted: true
                     }
                     'x_snc_store_upda_1/NavigationHeader-WxLxbkaW': {
                         table: 'sys_ux_lib_asset'
@@ -1951,6 +2083,14 @@ declare global {
                         id: 'fceb880d1bc7439d95f1cdd4d5609af7'
                         deleted: true
                     }
+                    'x_snc_store_upda_1/StoreUpdatesDashboard-BwCBlFxZ': {
+                        table: 'sys_ux_lib_asset'
+                        id: 'd80ea458651247dca0210be2556c96b6'
+                    }
+                    'x_snc_store_upda_1/StoreUpdatesDashboard-BwCBlFxZ.js.map': {
+                        table: 'sys_ux_lib_asset'
+                        id: 'f37ce49bd85c443784780f3248028e59'
+                    }
                     'x_snc_store_upda_1/StoreUpdatesDashboard-BX-qal8V': {
                         table: 'sys_ux_lib_asset'
                         id: '6d5cf559324f4319be7e709f39ffad01'
@@ -1994,10 +2134,12 @@ declare global {
                     'x_snc_store_upda_1/StoreUpdatesDashboard-C3PCCQCc': {
                         table: 'sys_ux_lib_asset'
                         id: 'baf32f2f54764c7cac6b3f1c6a63fa69'
+                        deleted: true
                     }
                     'x_snc_store_upda_1/StoreUpdatesDashboard-C3PCCQCc.js.map': {
                         table: 'sys_ux_lib_asset'
                         id: '7103c3791667462ca06434f13cc52c44'
+                        deleted: true
                     }
                     'x_snc_store_upda_1/StoreUpdatesDashboard-C7SZak1l': {
                         table: 'sys_ux_lib_asset'
@@ -2629,6 +2771,14 @@ declare global {
                         id: 'e565a05cdeda4b4bb838aa70266b35bb'
                         deleted: true
                     }
+                    'x_snc_store_upda_1/useNotifications-6AA7S4Ak': {
+                        table: 'sys_ux_lib_asset'
+                        id: 'e9073110f59c4bbb8f3009154d4047ec'
+                    }
+                    'x_snc_store_upda_1/useNotifications-6AA7S4Ak.js.map': {
+                        table: 'sys_ux_lib_asset'
+                        id: '1caddc3ebabc42ab83688a8b16294e93'
+                    }
                     'x_snc_store_upda_1/useNotifications-AkAsFemA': {
                         table: 'sys_ux_lib_asset'
                         id: '2ea92575a9fb4614aa60eb491cd245d1'
@@ -2702,12 +2852,12 @@ declare global {
                     'x_snc_store_upda_1/useNotifications-DCMtwzeQ': {
                         table: 'sys_ux_lib_asset'
                         id: '3e08005f731849d595ce2686a8d995a8'
-                        deleted: false
+                        deleted: true
                     }
                     'x_snc_store_upda_1/useNotifications-DCMtwzeQ.js.map': {
                         table: 'sys_ux_lib_asset'
                         id: '5e02a45fdc17479498c2f4b2bb0033c4'
-                        deleted: false
+                        deleted: true
                     }
                     'x_snc_store_upda_1/useNotifications-pLK8uTYE': {
                         table: 'sys_ux_lib_asset'
@@ -2772,12 +2922,12 @@ declare global {
                     'x_snc_store_upda_1/useUserContext-CeDkumxC': {
                         table: 'sys_ux_lib_asset'
                         id: '02c279ec7a83402eb2c27d3e76134538'
-                        deleted: false
+                        deleted: true
                     }
                     'x_snc_store_upda_1/useUserContext-CeDkumxC.js.map': {
                         table: 'sys_ux_lib_asset'
                         id: '9dc128d777514d778c47c91d767c010e'
-                        deleted: false
+                        deleted: true
                     }
                     'x_snc_store_upda_1/useUserContext-Cjur-s84': {
                         table: 'sys_ux_lib_asset'
@@ -2798,6 +2948,22 @@ declare global {
                         table: 'sys_ux_lib_asset'
                         id: '340f6b046faa4ef6b60e48eaf167494c'
                         deleted: true
+                    }
+                    'x_snc_store_upda_1/useUserContext-D_kq4cX3': {
+                        table: 'sys_ux_lib_asset'
+                        id: 'e329a06011d24f13ac9710181c71b5f9'
+                    }
+                    'x_snc_store_upda_1/useUserContext-D_kq4cX3.js.map': {
+                        table: 'sys_ux_lib_asset'
+                        id: '3f05d1f845394404b530dcb0affaf646'
+                    }
+                    'x_snc_store_upda_1/ValidationStatusCard-Dwh96QAu': {
+                        table: 'sys_ux_lib_asset'
+                        id: 'adbf6b70ffa44379819698104af1603c'
+                    }
+                    'x_snc_store_upda_1/ValidationStatusCard-Dwh96QAu.js.map': {
+                        table: 'sys_ux_lib_asset'
+                        id: '7a9752a52fbe424888f34e2db04cc375'
                     }
                 }
                 composite: [
