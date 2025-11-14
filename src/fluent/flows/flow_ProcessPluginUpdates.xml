@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<unload unload_date="2025-11-13 13:43:39">
+<unload unload_date="2025-11-14 15:18:05">
 <sys_hub_flow action="INSERT_OR_UPDATE">
 <access>public</access>
 <acls/>
 <active>true</active>
 <annotation/>
-<attributes>browserActivatedIn=chrome,integrationActivatedIn=standalone,labelCacheCleanUpExecuted=true,timeFromCreateToActivate=97234000,viewActivatedIn=naturalLanguage</attributes>
+<attributes>browserActivatedIn=chrome,integrationActivatedIn=standalone,labelCacheCleanUpExecuted=true,timeFromCreateToActivate=17000,viewActivatedIn=naturalLanguage</attributes>
 <authored_on_release_version>28100</authored_on_release_version>
 <callable_by_client_api>false</callable_by_client_api>
 <category display_value=""/>
 <compiler_build>glide-zurich-07-01-2025__patch3-10-16-2025_10-24-2025_0919.zip</compiler_build>
-<copied_from>02007f75fb813a14e80bf602beefdccd</copied_from>
-<copied_from_name>Plugin Updater</copied_from_name>
+<copied_from>fc2cbc1bfb0d72105543f4c69eefdca0</copied_from>
+<copied_from_name>Process Plugin Updates</copied_from_name>
 <description>Plugin Updater</description>
 <display_name_after_preview/>
 <flow_priority>MEDIUM</flow_priority>
 <generation_source/>
-<internal_name>process_plugin_updates</internal_name>
-<label_cache>[{"name":"subflow.apps","label":"Input➛Applications","type":"string","base_type":"string","usedInstances":{"b276c5b2-8a5b-4fb8-bf69-c3b2f5eb7eb8":["conditions"]},"attributes":{"sourceUiUniqueId":"","sourceType":"","sourceId":"","uiUniqueId":"2f87da3c-f077-4108-9df1-821a45ea18dc"}},{"name":"c6e9a576-8209-466c-9a5e-dca4ed266510.progress_id","label":"3 - Batch Install➛Progress ID","reference_display":"Progress ID","type":"string","base_type":"string","usedInstances":{},"attributes":{"uiType":"string","uiTypeLabel":"String","element_mapping_provider":"com.glide.flow_design.action.data.FlowDesignVariableMapper","pwd2droppable":"true","uiUniqueId":"93f6a70e-6c6b-4246-8d9a-b5bb1b1dee5d"}},{"name":"c6e9a576-8209-466c-9a5e-dca4ed266510.http_status","label":"3 - Batch Install➛HTTP Status","reference_display":"HTTP Status","type":"string","base_type":"string","usedInstances":{},"attributes":{"uiType":"string","uiTypeLabel":"String","element_mapping_provider":"com.glide.flow_design.action.data.FlowDesignVariableMapper","pwd2droppable":"true","uiUniqueId":"87747bb3-3e9b-44e4-b858-8809483dc7cd"}},{"name":"c6e9a576-8209-466c-9a5e-dca4ed266510.status_message","label":"3 - Batch Install➛Status Message","reference_display":"Status Message","type":"string","base_type":"string","usedInstances":{},"attributes":{"uiType":"string","uiTypeLabel":"String","element_mapping_provider":"com.glide.flow_design.action.data.FlowDesignVariableMapper","pwd2droppable":"true","uiUniqueId":"565282e5-1ee6-4b04-9a6b-7a6d47a4da5b"}},{"name":"flow_variable.batch_manifest","label":"Flow Variables➛Batch Manifest","type":"string","base_type":"string","usedInstances":{"c6e9a576-8209-466c-9a5e-dca4ed266510":["batch_plan"]},"attributes":{"sourceUiUniqueId":"","sourceType":"","sourceId":"","uiUniqueId":"70aafde9-0c47-484e-adb0-f483cc07e260"}}]</label_cache>
-<latest_snapshot>d52c4fa3fb01f6105543f4c69eefdc51</latest_snapshot>
-<master_snapshot>fc4cb45bfb0d72105543f4c69eefdcde</master_snapshot>
+<internal_name>process_plugin_updates_v2</internal_name>
+<label_cache>[{"name":"flow_variable.batch_manifest","label":"Flow Variables➛Batch Manifest","type":"string","base_type":"string","usedInstances":{"c6e9a576-8209-466c-9a5e-dca4ed266510":["batch_plan"]},"attributes":{"sourceUiUniqueId":"","sourceType":"","sourceId":"","uiUniqueId":"70aafde9-0c47-484e-adb0-f483cc07e260"}},{"name":"c6e9a576-8209-466c-9a5e-dca4ed266510.status_message","label":"3 - Batch Install➛Status Message","reference_display":"Status Message","type":"string","base_type":"string","usedInstances":{},"attributes":{"uiType":"string","uiTypeLabel":"String","element_mapping_provider":"com.glide.flow_design.action.data.FlowDesignVariableMapper","pwd2droppable":"true","uiUniqueId":"565282e5-1ee6-4b04-9a6b-7a6d47a4da5b"}},{"name":"c6e9a576-8209-466c-9a5e-dca4ed266510.http_status","label":"3 - Batch Install➛HTTP Status","reference_display":"HTTP Status","type":"string","base_type":"string","usedInstances":{},"attributes":{"uiType":"string","uiTypeLabel":"String","element_mapping_provider":"com.glide.flow_design.action.data.FlowDesignVariableMapper","pwd2droppable":"true","uiUniqueId":"87747bb3-3e9b-44e4-b858-8809483dc7cd"}},{"name":"c6e9a576-8209-466c-9a5e-dca4ed266510.progress_id","label":"3 - Batch Install➛Progress ID","reference_display":"Progress ID","type":"string","base_type":"string","usedInstances":{},"attributes":{"uiType":"string","uiTypeLabel":"String","element_mapping_provider":"com.glide.flow_design.action.data.FlowDesignVariableMapper","pwd2droppable":"true","uiUniqueId":"93f6a70e-6c6b-4246-8d9a-b5bb1b1dee5d"}},{"name":"subflow.apps","label":"Input➛Applications","type":"string","base_type":"string","usedInstances":{"b276c5b2-8a5b-4fb8-bf69-c3b2f5eb7eb8":["conditions"]},"attributes":{"sourceUiUniqueId":"","sourceType":"","sourceId":"","uiUniqueId":"2f87da3c-f077-4108-9df1-821a45ea18dc"}}]</label_cache>
+<latest_snapshot>37bebbccfb19be105543f4c69eefdc37</latest_snapshot>
+<master_snapshot>0fedd300fb91be105543f4c69eefdc4c</master_snapshot>
 <master_snapshot_digest/>
-<name>Process Plugin Updates</name>
+<name>Process Plugin Updates V2</name>
 <natlang/>
 <outputs/>
 <pre_compiled>false</pre_compiled>
@@ -35,22 +35,22 @@
 <substatus/>
 <sys_class_name>sys_hub_flow</sys_class_name>
 <sys_created_by>admin</sys_created_by>
-<sys_created_on>2025-11-11 16:46:55</sys_created_on>
+<sys_created_on>2025-11-14 12:28:54</sys_created_on>
 <sys_domain>global</sys_domain>
 <sys_domain_path>/</sys_domain_path>
-<sys_id>fc2cbc1bfb0d72105543f4c69eefdca0</sys_id>
-<sys_mod_count>24</sys_mod_count>
-<sys_name>Process Plugin Updates</sys_name>
+<sys_id>aadd1bccfb51be105543f4c69eefdc1a</sys_id>
+<sys_mod_count>3</sys_mod_count>
+<sys_name>Process Plugin Updates V2</sys_name>
 <sys_overrides display_value=""/>
 <sys_package display_value="Batch Plugin Updater" source="x_snc_store_upda_1">a0a02e10fbcd72d0e80bf602beefdc21</sys_package>
 <sys_policy/>
 <sys_scope display_value="Batch Plugin Updater">a0a02e10fbcd72d0e80bf602beefdc21</sys_scope>
-<sys_update_name>sys_hub_flow_fc2cbc1bfb0d72105543f4c69eefdca0</sys_update_name>
+<sys_update_name>sys_hub_flow_aadd1bccfb51be105543f4c69eefdc1a</sys_update_name>
 <sys_updated_by>admin</sys_updated_by>
-<sys_updated_on>2025-11-12 19:47:33</sys_updated_on>
+<sys_updated_on>2025-11-14 12:29:14</sys_updated_on>
 <type>subflow</type>
 <updation_source/>
 <version>2</version>
-<version_record display_value="741fa623fb89b6105543f4c69eefdce9">741fa623fb89b6105543f4c69eefdce9</version_record>
+<version_record display_value="bfed5700fb91be105543f4c69eefdc4d">bfed5700fb91be105543f4c69eefdc4d</version_record>
 </sys_hub_flow>
 </unload>
