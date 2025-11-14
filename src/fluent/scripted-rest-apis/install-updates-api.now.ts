@@ -5,24 +5,25 @@ import { RestApi } from '@servicenow/sdk/core'
 // Provides clean REST interface between React frontend and ServiceNow subflow
 // Endpoint: POST /api/x_snc_store_upda_1/install_updates
 RestApi({
-  $id: Now.ID['install_updates_api'],
-  name: 'Install Updates API',
-  service_id: 'install_updates',
-  active: true,
-  short_description: 'API for triggering application update installations via subflow',
-  consumes: 'application/json',
-  produces: 'application/json',
-  routes: [{
-    $id: Now.ID['install_updates_route_get'],
-    name: 'Validate System Status',
-    method: 'GET',
-    path: '/',
-    script: `
+    $id: Now.ID['install_updates_api'],
+    name: 'Install Updates API',
+    serviceId: 'install_updates',
+    active: true,
+    shortDescription: 'API for triggering application update installations via subflow',
+    consumes: 'application/json',
+    produces: 'application/json',
+    routes: [
+        {
+            $id: Now.ID['install_updates_route_get'],
+            name: 'Validate System Status',
+            method: 'GET',
+            path: '/',
+            script: `
 (function process(request, response) {
     try {
         // Query by NAME (instance-portable) instead of sys_id
         var flow = new GlideRecord('sys_hub_flow');
-        flow.addQuery('name', 'Process Plugin Updates');
+        flow.addQuery('name', 'Process Plugin Updates V2');
         flow.query();
         var flowExists = flow.hasNext();
         
@@ -65,16 +66,19 @@ RestApi({
     }
 })(request, response);
     `,
-    authorization: true,
-    authentication: true,
-    active: true,
-    short_description: 'Check system validation status for plugin updates'
-  }, {
-    $id: Now.ID['install_updates_route_post'],
-    name: 'Install Updates',
-    method: 'POST',
-    path: '/',
-    script: `
+            authorization: true,
+            authentication: true,
+            active: true,
+            shortDescription: 'Check system validation status for plugin updates',
+            consumes: 'application/json',
+            produces: 'application/json',
+        },
+        {
+            $id: Now.ID['install_updates_route_post'],
+            name: 'Install Updates',
+            method: 'POST',
+            path: '/',
+            script: `
 (function process(request, response) {
     try {
         // Parse request body
@@ -118,7 +122,7 @@ RestApi({
         // Execute the subflow in foreground with inputs
         var result = sn_fd.FlowAPI.getRunner()
         //    .subflow('global.plugin_updater')
-            .subflow('x_snc_store_upda_1.process_plugin_updates')
+            .subflow('x_snc_store_upda_1.process_plugin_updates_v2')
             .inForeground()
             .withInputs(inputs)
             .run();
@@ -187,10 +191,13 @@ RestApi({
     }
 })(request, response);
     `,
-    authorization: true,
-    authentication: true,
-    active: true,
-    short_description: 'Execute application updates via global.plugin_updater subflow'
-  }],
-  enforce_acl: []
+            authorization: true,
+            authentication: true,
+            active: true,
+            shortDescription: 'Execute application updates via global.plugin_updater subflow',
+            consumes: 'application/json',
+            produces: 'application/json',
+        },
+    ],
+    enforceAcl: [],
 })

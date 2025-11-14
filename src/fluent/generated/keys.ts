@@ -32,10 +32,15 @@ declare global {
                     '0c1f2623fb89b6105543f4c69eefdc26': {
                         table: 'sys_hub_flow_logic_instance_v2'
                         id: '0c1f2623fb89b6105543f4c69eefdc26'
+                        deleted: true
                     }
                     '0d60055bfb4d72105543f4c69eefdc99': {
                         table: 'sys_scope_privilege'
                         id: '0d60055bfb4d72105543f4c69eefdc99'
+                    }
+                    '0fedd300fb91be105543f4c69eefdc4c': {
+                        table: 'sys_hub_flow_snapshot'
+                        id: '0fedd300fb91be105543f4c69eefdc4c'
                     }
                     '13dce779fb413a14e80bf602beefdce7': {
                         table: 'sys_flow_cat_variable_model'
@@ -51,6 +56,10 @@ declare global {
                         id: '17dce779fb413a14e80bf602beefdce5'
                         deleted: true
                     }
+                    '17edd300fb91be105543f4c69eefdce9': {
+                        table: 'sys_hub_action_instance_v2'
+                        id: '17edd300fb91be105543f4c69eefdce9'
+                    }
                     '19592c55fb45bed0e80bf602beefdc88': {
                         table: 'sys_scope_privilege'
                         id: '19592c55fb45bed0e80bf602beefdc88'
@@ -63,26 +72,44 @@ declare global {
                         table: 'sys_scope_privilege'
                         id: '2651179efb4dbe14e80bf602beefdc0a'
                     }
+                    '27ed1700fb91be105543f4c69eefdc2d': {
+                        table: 'sys_flow_subflow_plan'
+                        id: '27ed1700fb91be105543f4c69eefdc2d'
+                    }
                     '342cfc1bfb0d72105543f4c69eefdc1f': {
                         table: 'sys_hub_flow_logic_instance_v2'
                         id: '342cfc1bfb0d72105543f4c69eefdc1f'
                         deleted: true
                     }
+                    '34a2c7b3fb85ba105543f4c69eefdc7e': {
+                        table: 'sys_scope_privilege'
+                        id: '34a2c7b3fb85ba105543f4c69eefdc7e'
+                    }
                     '353042c9fb013ed0e80bf602beefdc0b': {
                         table: 'sys_scope_privilege'
                         id: '353042c9fb013ed0e80bf602beefdc0b'
                     }
+                    '36dd9fccfb51be105543f4c69eefdcb6': {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: '36dd9fccfb51be105543f4c69eefdcb6'
+                    }
                     '38ad662bfb49b6105543f4c69eefdce1': {
                         table: 'sys_hub_flow_logic_instance_v2'
                         id: '38ad662bfb49b6105543f4c69eefdce1'
+                        deleted: true
                     }
                     '392eaa2ffb49b6105543f4c69eefdcf1': {
                         table: 'sys_hub_flow_output'
                         id: '392eaa2ffb49b6105543f4c69eefdcf1'
+                        deleted: true
                     }
                     '3d07bf31fb053a14e80bf602beefdc53': {
                         table: 'sys_scope_privilege'
                         id: '3d07bf31fb053a14e80bf602beefdc53'
+                    }
+                    '3edd9fccfb51be105543f4c69eefdcb8': {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: '3edd9fccfb51be105543f4c69eefdcb8'
                     }
                     '3f137d1bfb09b2105543f4c69eefdc69': {
                         table: 'sys_hub_flow_logic_instance_v2'
@@ -92,10 +119,12 @@ declare global {
                     '3f827597fb09b2105543f4c69eefdcb9': {
                         table: 'sn_flow_summary'
                         id: '3f827597fb09b2105543f4c69eefdcb9'
+                        deleted: true
                     }
                     '401f2623fb89b6105543f4c69eefdc29': {
                         table: 'sys_hub_flow_logic_instance_v2'
                         id: '401f2623fb89b6105543f4c69eefdc29'
+                        deleted: true
                     }
                     '414cf45bfb0d72105543f4c69eefdc3d': {
                         table: 'sys_hub_flow_logic_instance_v2'
@@ -132,6 +161,18 @@ declare global {
                         table: 'sys_ui_element'
                         id: '4e84469dfb49fed0e80bf602beefdc86'
                     }
+                    '4fedd300fb91be105543f4c69eefdc4f': {
+                        table: 'sys_hub_flow_input'
+                        id: '4fedd300fb91be105543f4c69eefdc4f'
+                    }
+                    '5fedd300fb91be105543f4c69eefdcb6': {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: '5fedd300fb91be105543f4c69eefdcb6'
+                    }
+                    '5fedd300fb91be105543f4c69eefdce6': {
+                        table: 'sys_hub_action_instance_v2'
+                        id: '5fedd300fb91be105543f4c69eefdce6'
+                    }
                     '601b7817fb0d72105543f4c69eefdc1c': {
                         table: 'sys_hub_action_instance_v2'
                         id: '601b7817fb0d72105543f4c69eefdc1c'
@@ -141,10 +182,18 @@ declare global {
                         table: 'sys_alias'
                         id: '627be2e3fb49b6105543f4c69eefdcab'
                     }
+                    '62dd1bccfb51be105543f4c69eefdc1c': {
+                        table: 'sys_flow_cat_variable_model'
+                        id: '62dd1bccfb51be105543f4c69eefdc1c'
+                    }
                     '641b7817fb0d72105543f4c69eefdc0a': {
                         table: 'sys_hub_flow_logic_instance_v2'
                         id: '641b7817fb0d72105543f4c69eefdc0a'
                         deleted: true
+                    }
+                    '66dd9fccfb51be105543f4c69eefdc39': {
+                        table: 'sys_hub_flow_input'
+                        id: '66dd9fccfb51be105543f4c69eefdc39'
                     }
                     '681b3817fb0d72105543f4c69eefdcea': {
                         table: 'sys_hub_flow_output'
@@ -187,6 +236,10 @@ declare global {
                         table: 'sys_security_acl'
                         id: '755a9a79fb8db614e80bf602beefdc5e'
                     }
+                    '76dd9fccfb51be105543f4c69eefdccc': {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: '76dd9fccfb51be105543f4c69eefdccc'
+                    }
                     '782cbc1bfb0d72105543f4c69eefdcad': {
                         table: 'sys_hub_flow_variable'
                         id: '782cbc1bfb0d72105543f4c69eefdcad'
@@ -196,10 +249,26 @@ declare global {
                         table: 'sys_scope_privilege'
                         id: '7a86bbbdfbc13a14e80bf602beefdc56'
                     }
+                    '7add9fccfb51be105543f4c69eefdcce': {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: '7add9fccfb51be105543f4c69eefdcce'
+                    }
                     '7c2cfc1bfb0d72105543f4c69eefdc27': {
                         table: 'sys_hub_action_instance_v2'
                         id: '7c2cfc1bfb0d72105543f4c69eefdc27'
                         deleted: true
+                    }
+                    '7ca287b3fb85ba105543f4c69eefdcfa': {
+                        table: 'sys_scope_privilege'
+                        id: '7ca287b3fb85ba105543f4c69eefdcfa'
+                    }
+                    '7edd9fccfb51be105543f4c69eefdc82': {
+                        table: 'sys_hub_flow_output'
+                        id: '7edd9fccfb51be105543f4c69eefdc82'
+                    }
+                    '7edd9fccfb51be105543f4c69eefdcca': {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: '7edd9fccfb51be105543f4c69eefdcca'
                     }
                     '80237d1bfb09b2105543f4c69eefdc9a': {
                         table: 'sys_hub_flow_logic_instance_v2'
@@ -221,10 +290,12 @@ declare global {
                     '881f2623fb89b6105543f4c69eefdc08': {
                         table: 'sys_hub_flow_logic_instance_v2'
                         id: '881f2623fb89b6105543f4c69eefdc08'
+                        deleted: true
                     }
                     '881fe223fb89b6105543f4c69eefdcaf': {
                         table: 'sys_hub_flow_output'
                         id: '881fe223fb89b6105543f4c69eefdcaf'
+                        deleted: true
                     }
                     '894cf45bfb0d72105543f4c69eefdc43': {
                         table: 'sys_hub_action_instance_v2'
@@ -242,6 +313,14 @@ declare global {
                     '8e84469dfb49fed0e80bf602beefdc88': {
                         table: 'sys_ui_element'
                         id: '8e84469dfb49fed0e80bf602beefdc88'
+                    }
+                    '93edd300fb91be105543f4c69eefdce3': {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: '93edd300fb91be105543f4c69eefdce3'
+                    }
+                    '93edd300fb91be105543f4c69eefdce5': {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: '93edd300fb91be105543f4c69eefdce5'
                     }
                     '93ef223dfbc1f614e80bf602beefdc4c': {
                         table: 'sys_scope_privilege'
@@ -261,10 +340,18 @@ declare global {
                         id: '981b3817fb0d72105543f4c69eefdc57'
                         deleted: true
                     }
+                    '9bedd300fb91be105543f4c69eefdcba': {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: '9bedd300fb91be105543f4c69eefdcba'
+                    }
                     '9c1b3817fb0d72105543f4c69eefdc75': {
                         table: 'sys_hub_flow_variable'
                         id: '9c1b3817fb0d72105543f4c69eefdc75'
                         deleted: true
+                    }
+                    '9fedd300fb91be105543f4c69eefdce1': {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: '9fedd300fb91be105543f4c69eefdce1'
                     }
                     a003bf71fbc13a14e80bf602beefdc4f: {
                         table: 'sys_ui_action'
@@ -312,6 +399,10 @@ declare global {
                         id: 'b02cbc1bfb0d72105543f4c69eefdcf5'
                         deleted: true
                     }
+                    b2dd9fccfb51be105543f4c69eefdc5d: {
+                        table: 'sys_hub_flow_output'
+                        id: 'b2dd9fccfb51be105543f4c69eefdc5d'
+                    }
                     b55a5a79fb8db614e80bf602beefdc57: {
                         table: 'sys_security_acl'
                         id: 'b55a5a79fb8db614e80bf602beefdc57'
@@ -320,6 +411,10 @@ declare global {
                         table: 'sys_hub_action_instance_v2'
                         id: 'b55ee7fdfb413a14e80bf602beefdccc'
                         deleted: true
+                    }
+                    b6dd9fccfb51be105543f4c69eefdcd0: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: 'b6dd9fccfb51be105543f4c69eefdcd0'
                     }
                     b82cfc1bfb0d72105543f4c69eefdc22: {
                         table: 'sys_hub_flow_logic_instance_v2'
@@ -330,6 +425,15 @@ declare global {
                         table: 'sys_hub_flow_output'
                         id: 'b84cb45bfb0d72105543f4c69eefdcf9'
                         deleted: true
+                    }
+                    b981a440fb99fa105543f4c69eefdca2: {
+                        table: 'sys_flow_subflow_plan'
+                        id: 'b981a440fb99fa105543f4c69eefdca2'
+                        deleted: true
+                    }
+                    badd9fccfb51be105543f4c69eefdcc8: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: 'badd9fccfb51be105543f4c69eefdcc8'
                     }
                     batch_plugin_config_separator: {
                         table: 'sys_app_module'
@@ -369,6 +473,10 @@ declare global {
                         table: 'sys_ui_element'
                         id: 'c284469dfb49fed0e80bf602beefdc88'
                     }
+                    c3edd300fb91be105543f4c69eefdc72: {
+                        table: 'sys_hub_flow_output'
+                        id: 'c3edd300fb91be105543f4c69eefdc72'
+                    }
                     c54cf45bfb0d72105543f4c69eefdc41: {
                         table: 'sys_hub_action_instance_v2'
                         id: 'c54cf45bfb0d72105543f4c69eefdc41'
@@ -405,6 +513,18 @@ declare global {
                         table: 'sys_scope_privilege'
                         id: 'cf51db9efb4dbe14e80bf602beefdc78'
                     }
+                    cfedd300fb91be105543f4c69eefdc4d: {
+                        table: 'sys_flow_cat_variable_model'
+                        id: 'cfedd300fb91be105543f4c69eefdc4d'
+                    }
+                    cfedd300fb91be105543f4c69eefdc66: {
+                        table: 'sys_hub_flow_output'
+                        id: 'cfedd300fb91be105543f4c69eefdc66'
+                    }
+                    cfedd300fb91be105543f4c69eefdc7c: {
+                        table: 'sys_hub_flow_output'
+                        id: 'cfedd300fb91be105543f4c69eefdc7c'
+                    }
                     cred_plugin_cicd_auth: {
                         table: 'basic_auth_credentials'
                         id: 'a8cb2627fb49b6105543f4c69eefdc09'
@@ -418,6 +538,22 @@ declare global {
                         table: 'sys_security_acl'
                         id: 'd3cb6b75fb413a14e80bf602beefdc3d'
                     }
+                    d3edd300fb91be105543f4c69eefdcb5: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: 'd3edd300fb91be105543f4c69eefdcb5'
+                    }
+                    d7edd300fb91be105543f4c69eefdc91: {
+                        table: 'sys_hub_flow_variable'
+                        id: 'd7edd300fb91be105543f4c69eefdc91'
+                    }
+                    dbedd300fb91be105543f4c69eefdcb3: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: 'dbedd300fb91be105543f4c69eefdcb3'
+                    }
+                    dbedd300fb91be105543f4c69eefdcb8: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: 'dbedd300fb91be105543f4c69eefdcb8'
+                    }
                     dd6b6ff1fb413a14e80bf602beefdc6b: {
                         table: 'sys_security_acl'
                         id: 'dd6b6ff1fb413a14e80bf602beefdc6b'
@@ -426,6 +562,10 @@ declare global {
                         table: 'sys_hub_flow_output'
                         id: 'e01b3817fb0d72105543f4c69eefdcf2'
                         deleted: true
+                    }
+                    e15a9279fb8db614e80bf602beefdc29: {
+                        table: 'sys_embedded_help_role'
+                        id: 'e15a9279fb8db614e80bf602beefdc29'
                     }
                     e2867f7dfbc13a14e80bf602beefdc56: {
                         table: 'sys_scope_privilege'
@@ -439,6 +579,7 @@ declare global {
                     eb77e667fb09b6105543f4c69eefdc28: {
                         table: 'sys_hub_flow_logic_instance_v2'
                         id: 'eb77e667fb09b6105543f4c69eefdc28'
+                        deleted: true
                     }
                     ec9057f1fbc9f614e80bf602beefdc9d: {
                         table: 'sys_ui_page'
@@ -448,6 +589,10 @@ declare global {
                         table: 'sys_hub_flow_output'
                         id: 'eded6b7dfb413a14e80bf602beefdc73'
                         deleted: true
+                    }
+                    eedd5fccfb51be105543f4c69eefdc5b: {
+                        table: 'sys_hub_flow_variable'
+                        id: 'eedd5fccfb51be105543f4c69eefdc5b'
                     }
                     f02cfc1bfb0d72105543f4c69eefdc00: {
                         table: 'sys_hub_flow_output'
@@ -467,6 +612,10 @@ declare global {
                         id: 'f138222bfb09b6105543f4c69eefdc24'
                         deleted: true
                     }
+                    f2dd9fccfb51be105543f4c69eefdc7d: {
+                        table: 'sys_hub_flow_output'
+                        id: 'f2dd9fccfb51be105543f4c69eefdc7d'
+                    }
                     f42cbc1bfb0d72105543f4c69eefdca2: {
                         table: 'sys_flow_cat_variable_model'
                         id: 'f42cbc1bfb0d72105543f4c69eefdca2'
@@ -479,10 +628,28 @@ declare global {
                     f6ed2263fb49b6105543f4c69eefdc08: {
                         table: 'sys_hub_flow_logic_instance_v2'
                         id: 'f6ed2263fb49b6105543f4c69eefdc08'
+                        deleted: true
+                    }
+                    f8a2c7b3fb85ba105543f4c69eefdc83: {
+                        table: 'sys_scope_privilege'
+                        id: 'f8a2c7b3fb85ba105543f4c69eefdc83'
                     }
                     f91549bcfb89f6d0e80bf602beefdca4: {
                         table: 'sys_scope_privilege'
                         id: 'f91549bcfb89f6d0e80bf602beefdca4'
+                    }
+                    fadd9fccfb51be105543f4c69eefdcba: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: 'fadd9fccfb51be105543f4c69eefdcba'
+                    }
+                    fadd9fccfb51be105543f4c69eefdcd3: {
+                        table: 'sys_hub_action_instance_v2'
+                        id: 'fadd9fccfb51be105543f4c69eefdcd3'
+                    }
+                    fc2cbc1bfb0d72105543f4c69eefdca0: {
+                        table: 'sys_hub_flow'
+                        id: 'fc2cbc1bfb0d72105543f4c69eefdca0'
+                        deleted: true
                     }
                     fc4cb45bfb0d72105543f4c69eefdcde: {
                         table: 'sys_hub_flow_snapshot'
@@ -499,9 +666,14 @@ declare global {
                         id: 'fc4cb45bfb0d72105543f4c69eefdce2'
                         deleted: true
                     }
+                    fedd9fccfb51be105543f4c69eefdcb3: {
+                        table: 'sys_hub_flow_logic_instance_v2'
+                        id: 'fedd9fccfb51be105543f4c69eefdcb3'
+                    }
                     flow_process_plugin_updates: {
                         table: 'sys_hub_flow'
                         id: 'fc2cbc1bfb0d72105543f4c69eefdca0'
+                        deleted: true
                     }
                     FlowCredentialsStatusChecker: {
                         table: 'sys_script_include'
@@ -2968,12 +3140,65 @@ declare global {
                 }
                 composite: [
                     {
+                        table: 'sys_ui_list_element'
+                        id: '011cb8f8fb09f6d0e80bf602beefdc2a'
+                        key: {
+                            list_id: {
+                                id: '051cb8f8fb09f6d0e80bf602beefdc26'
+                                key: {
+                                    name: 'x_snc_store_upda_1_store_updates'
+                                    view: 'Default view'
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'latest_major_version'
+                        }
+                    },
+                    {
                         table: 'sys_documentation'
                         id: '027d5d09a9c94d46909b129570eaa120'
                         key: {
                             name: 'x_snc_store_upda_1_st_available_updates'
                             element: 'application'
                             language: 'en'
+                        }
+                    },
+                    {
+                        table: 'sys_ui_list'
+                        id: '051cb8f8fb09f6d0e80bf602beefdc26'
+                        key: {
+                            name: 'x_snc_store_upda_1_store_updates'
+                            view: {
+                                id: 'Default view'
+                                key: {
+                                    name: 'NULL'
+                                }
+                            }
+                            sys_domain: 'global'
+                            element: 'NULL'
+                            relationship: 'NULL'
+                            parent: 'NULL'
+                        }
+                    },
+                    {
+                        table: 'sys_ui_list_element'
+                        id: '051cb8f8fb09f6d0e80bf602beefdc29'
+                        key: {
+                            list_id: {
+                                id: '051cb8f8fb09f6d0e80bf602beefdc26'
+                                key: {
+                                    name: 'x_snc_store_upda_1_store_updates'
+                                    view: 'Default view'
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'batch_level'
                         }
                     },
                     {
@@ -3002,10 +3227,73 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_ui_list_element'
+                        id: '091cb8f8fb09f6d0e80bf602beefdc28'
+                        key: {
+                            list_id: {
+                                id: '051cb8f8fb09f6d0e80bf602beefdc26'
+                                key: {
+                                    name: 'x_snc_store_upda_1_store_updates'
+                                    view: 'Default view'
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'application'
+                        }
+                    },
+                    {
+                        table: 'sys_ui_list_element'
+                        id: '091cb8f8fb09f6d0e80bf602beefdc2b'
+                        key: {
+                            list_id: {
+                                id: '051cb8f8fb09f6d0e80bf602beefdc26'
+                                key: {
+                                    name: 'x_snc_store_upda_1_store_updates'
+                                    view: 'Default view'
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'level'
+                        }
+                    },
+                    {
                         table: 'sys_db_object'
                         id: '094737dd63f34cc5b98ec12423bb837f'
                         key: {
                             name: 'x_snc_store_upda_1_st_available_updates'
+                        }
+                    },
+                    {
+                        table: 'sys_documentation'
+                        id: '0bedd300fb91be105543f4c69eefdc60'
+                        key: {
+                            name: 'var__m_sys_hub_flow_input_0fedd300fb91be105543f4c69eefdc4c'
+                            element: 'apps'
+                            language: 'en'
+                        }
+                    },
+                    {
+                        table: 'sys_ui_list_element'
+                        id: '0d1cb8f8fb09f6d0e80bf602beefdc2a'
+                        key: {
+                            list_id: {
+                                id: '051cb8f8fb09f6d0e80bf602beefdc26'
+                                key: {
+                                    name: 'x_snc_store_upda_1_store_updates'
+                                    view: 'Default view'
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'latest_patch_version'
                         }
                     },
                     {
@@ -3036,6 +3324,42 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_ui_list_element'
+                        id: '13ef223dfbc1f614e80bf602beefdc20'
+                        key: {
+                            list_id: {
+                                id: 'd7efaaf9fbc1f614e80bf602beefdc24'
+                                key: {
+                                    name: 'x_snc_store_upda_1_st_available_updates'
+                                    view: 'Default view'
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'name'
+                        }
+                    },
+                    {
+                        table: 'sys_ui_list_element'
+                        id: '13ef223dfbc1f614e80bf602beefdc22'
+                        key: {
+                            list_id: {
+                                id: 'd7efaaf9fbc1f614e80bf602beefdc24'
+                                key: {
+                                    name: 'x_snc_store_upda_1_st_available_updates'
+                                    view: 'Default view'
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'installed_version'
+                        }
+                    },
+                    {
                         table: 'sys_dictionary'
                         id: '144f78f011d04d36baab82859be16581'
                         key: {
@@ -3054,10 +3378,72 @@ declare global {
                     },
                     {
                         table: 'sys_index'
+                        id: '15aaf222dd2946dba0846d5b704d87f9'
+                        key: {
+                            logical_table_name: 'x_snc_store_upda_1_store_updates'
+                            col_name_string: 'latest_major_version'
+                        }
+                    },
+                    {
+                        table: 'sys_ui_list_element'
+                        id: '17ef223dfbc1f614e80bf602beefdc21'
+                        key: {
+                            list_id: {
+                                id: 'd7efaaf9fbc1f614e80bf602beefdc24'
+                                key: {
+                                    name: 'x_snc_store_upda_1_st_available_updates'
+                                    view: 'Default view'
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'available_version'
+                        }
+                    },
+                    {
+                        table: 'sys_ui_list_element'
+                        id: '1bef223dfbc1f614e80bf602beefdc23'
+                        key: {
+                            list_id: {
+                                id: 'd7efaaf9fbc1f614e80bf602beefdc24'
+                                key: {
+                                    name: 'x_snc_store_upda_1_st_available_updates'
+                                    view: 'Default view'
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'latest_version_level'
+                        }
+                    },
+                    {
+                        table: 'sys_index'
                         id: '1f4b5be4c8f1492a91328552678485f4'
                         key: {
                             logical_table_name: 'x_snc_store_upda_1_st_available_updates'
                             col_name_string: 'latest_major_version'
+                        }
+                    },
+                    {
+                        table: 'sys_ui_list_element'
+                        id: '1fef223dfbc1f614e80bf602beefdc22'
+                        key: {
+                            list_id: {
+                                id: 'd7efaaf9fbc1f614e80bf602beefdc24'
+                                key: {
+                                    name: 'x_snc_store_upda_1_st_available_updates'
+                                    view: 'Default view'
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'latest_minor_version'
                         }
                     },
                     {
@@ -3077,6 +3463,14 @@ declare global {
                             name: 'var__m_sys_hub_flow_input_981b3817fb0d72105543f4c69eefdc57'
                             element: 'apps'
                             language: 'en'
+                        }
+                    },
+                    {
+                        table: 'sys_index'
+                        id: '248697fe818b473c838383ecc9d6b577'
+                        key: {
+                            logical_table_name: 'x_snc_store_upda_1_store_updates'
+                            col_name_string: 'latest_minor_version'
                         }
                     },
                     {
@@ -3181,9 +3575,19 @@ declare global {
                     {
                         table: 'sys_documentation'
                         id: '401fe223fb89b6105543f4c69eefdcc4'
+                        deleted: true
                         key: {
                             name: 'var__m_sys_hub_flow_output_fc4cb45bfb0d72105543f4c69eefdcde'
                             element: 'http_status'
+                            language: 'en'
+                        }
+                    },
+                    {
+                        table: 'sys_documentation'
+                        id: '47edd300fb91be105543f4c69eefdc79'
+                        key: {
+                            name: 'var__m_sys_hub_flow_output_0fedd300fb91be105543f4c69eefdc4c'
+                            element: 'progress_id'
                             language: 'en'
                         }
                     },
@@ -3193,6 +3597,15 @@ declare global {
                         key: {
                             name: 'x_snc_store_upda_1_store_updates'
                             element: 'name'
+                        }
+                    },
+                    {
+                        table: 'sys_documentation'
+                        id: '4bedd300fb91be105543f4c69eefdc6e'
+                        key: {
+                            name: 'var__m_sys_hub_flow_output_0fedd300fb91be105543f4c69eefdc4c'
+                            element: 'http_status'
+                            language: 'en'
                         }
                     },
                     {
@@ -3280,6 +3693,14 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_index'
+                        id: '625d94f217514bf893a076954763fdf5'
+                        key: {
+                            logical_table_name: 'x_snc_store_upda_1_store_updates'
+                            col_name_string: 'latest_patch_version'
+                        }
+                    },
+                    {
                         table: 'sys_documentation'
                         id: '641d1fca275b4dd8b910606e62aeea05'
                         key: {
@@ -3357,11 +3778,28 @@ declare global {
                     },
                     {
                         table: 'sys_documentation'
+                        id: '76dd9fccfb51be105543f4c69eefdc81'
+                        key: {
+                            name: 'var__m_sys_hub_flow_output_aadd1bccfb51be105543f4c69eefdc1a'
+                            element: 'progress_id'
+                            language: 'en'
+                        }
+                    },
+                    {
+                        table: 'sys_documentation'
                         id: '76e92fbc201e41d8938633935c60a5b6'
                         key: {
                             name: 'x_snc_store_upda_1_store_updates'
                             element: 'available_version'
                             language: 'en'
+                        }
+                    },
+                    {
+                        table: 'sys_index'
+                        id: '7b08331dc1fd4c5d92198199e6ab6746'
+                        key: {
+                            logical_table_name: 'x_snc_store_upda_1_store_updates'
+                            col_name_string: 'application'
                         }
                     },
                     {
@@ -3374,11 +3812,92 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_documentation'
+                        id: '7edd9fccfb51be105543f4c69eefdc62'
+                        key: {
+                            name: 'var__m_sys_hub_flow_output_aadd1bccfb51be105543f4c69eefdc1a'
+                            element: 'http_status'
+                            language: 'en'
+                        }
+                    },
+                    {
+                        table: 'sys_ui_list_element'
+                        id: '811cb8f8fb09f6d0e80bf602beefdc2b'
+                        key: {
+                            list_id: {
+                                id: '051cb8f8fb09f6d0e80bf602beefdc26'
+                                key: {
+                                    name: 'x_snc_store_upda_1_store_updates'
+                                    view: 'Default view'
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'latest_version_level'
+                        }
+                    },
+                    {
+                        table: 'sys_ui_list_element'
+                        id: '851cb8f8fb09f6d0e80bf602beefdc2a'
+                        key: {
+                            list_id: {
+                                id: '051cb8f8fb09f6d0e80bf602beefdc26'
+                                key: {
+                                    name: 'x_snc_store_upda_1_store_updates'
+                                    view: 'Default view'
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'latest_minor_version'
+                        }
+                    },
+                    {
                         table: 'sys_dictionary'
                         id: '871fd4b3bc8943658137b5abeea1b0fb'
                         key: {
                             name: 'x_snc_store_upda_1_store_updates'
                             element: 'available_version'
+                        }
+                    },
+                    {
+                        table: 'sys_ui_list_element'
+                        id: '891cb8f8fb09f6d0e80bf602beefdc27'
+                        key: {
+                            list_id: {
+                                id: '051cb8f8fb09f6d0e80bf602beefdc26'
+                                key: {
+                                    name: 'x_snc_store_upda_1_store_updates'
+                                    view: 'Default view'
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'name'
+                        }
+                    },
+                    {
+                        table: 'sys_ui_list_element'
+                        id: '891cb8f8fb09f6d0e80bf602beefdc29'
+                        key: {
+                            list_id: {
+                                id: '051cb8f8fb09f6d0e80bf602beefdc26'
+                                key: {
+                                    name: 'x_snc_store_upda_1_store_updates'
+                                    view: 'Default view'
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'installed_version'
                         }
                     },
                     {
@@ -3391,12 +3910,93 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_ui_list_element'
+                        id: '8d1cb8f8fb09f6d0e80bf602beefdc28'
+                        key: {
+                            list_id: {
+                                id: '051cb8f8fb09f6d0e80bf602beefdc26'
+                                key: {
+                                    name: 'x_snc_store_upda_1_store_updates'
+                                    view: 'Default view'
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'available_version'
+                        }
+                    },
+                    {
                         table: 'sys_choice'
                         id: '8d79e75b8a1a4eca9f4f84788d9e112f'
                         key: {
                             name: 'x_snc_store_upda_1_store_updates'
                             element: 'level'
                             value: 'development'
+                        }
+                    },
+                    {
+                        table: 'sys_documentation'
+                        id: '93edd300fb91be105543f4c69eefdc84'
+                        key: {
+                            name: 'var__m_sys_hub_flow_output_0fedd300fb91be105543f4c69eefdc4c'
+                            element: 'status_message'
+                            language: 'en'
+                        }
+                    },
+                    {
+                        table: 'sys_ui_list_element'
+                        id: '93ef223dfbc1f614e80bf602beefdc23'
+                        key: {
+                            list_id: {
+                                id: 'd7efaaf9fbc1f614e80bf602beefdc24'
+                                key: {
+                                    name: 'x_snc_store_upda_1_st_available_updates'
+                                    view: 'Default view'
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'latest_patch_version'
+                        }
+                    },
+                    {
+                        table: 'sys_ui_list_element'
+                        id: '97ef223dfbc1f614e80bf602beefdc22'
+                        key: {
+                            list_id: {
+                                id: 'd7efaaf9fbc1f614e80bf602beefdc24'
+                                key: {
+                                    name: 'x_snc_store_upda_1_st_available_updates'
+                                    view: 'Default view'
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'latest_major_version'
+                        }
+                    },
+                    {
+                        table: 'sys_ui_list_element'
+                        id: '9bef223dfbc1f614e80bf602beefdc21'
+                        key: {
+                            list_id: {
+                                id: 'd7efaaf9fbc1f614e80bf602beefdc24'
+                                key: {
+                                    name: 'x_snc_store_upda_1_st_available_updates'
+                                    view: 'Default view'
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'batch_level'
                         }
                     },
                     {
@@ -3414,6 +4014,42 @@ declare global {
                             name: 'x_snc_store_upda_1_st_available_updates'
                             element: 'level'
                             language: 'en'
+                        }
+                    },
+                    {
+                        table: 'sys_ui_list_element'
+                        id: '9fef223dfbc1f614e80bf602beefdc20'
+                        key: {
+                            list_id: {
+                                id: 'd7efaaf9fbc1f614e80bf602beefdc24'
+                                key: {
+                                    name: 'x_snc_store_upda_1_st_available_updates'
+                                    view: 'Default view'
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'application'
+                        }
+                    },
+                    {
+                        table: 'sys_ui_list_element'
+                        id: '9fef223dfbc1f614e80bf602beefdc23'
+                        key: {
+                            list_id: {
+                                id: 'd7efaaf9fbc1f614e80bf602beefdc24'
+                                key: {
+                                    name: 'x_snc_store_upda_1_st_available_updates'
+                                    view: 'Default view'
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'level'
                         }
                     },
                     {
@@ -3553,6 +4189,7 @@ declare global {
                     {
                         table: 'sys_documentation'
                         id: 'b92eaa2ffb49b6105543f4c69eefdcf6'
+                        deleted: true
                         key: {
                             name: 'var__m_sys_hub_flow_output_fc2cbc1bfb0d72105543f4c69eefdca0'
                             element: 'http_status'
@@ -3592,6 +4229,15 @@ declare global {
                         key: {
                             logical_table_name: 'x_snc_store_upda_1_st_available_updates'
                             col_name_string: 'available_version'
+                        }
+                    },
+                    {
+                        table: 'sys_documentation'
+                        id: 'bedd9fccfb51be105543f4c69eefdc57'
+                        key: {
+                            name: 'var__m_sys_hub_flow_input_aadd1bccfb51be105543f4c69eefdc1a'
+                            element: 'apps'
+                            language: 'en'
                         }
                     },
                     {
@@ -3666,6 +4312,23 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_ui_list'
+                        id: 'd7efaaf9fbc1f614e80bf602beefdc24'
+                        key: {
+                            name: 'x_snc_store_upda_1_st_available_updates'
+                            view: {
+                                id: 'Default view'
+                                key: {
+                                    name: 'NULL'
+                                }
+                            }
+                            sys_domain: 'global'
+                            element: 'NULL'
+                            relationship: 'NULL'
+                            parent: 'NULL'
+                        }
+                    },
+                    {
                         table: 'sys_documentation'
                         id: 'd89364b0455644e29b1a11b2f3191582'
                         key: {
@@ -3703,6 +4366,13 @@ declare global {
                             name: 'x_snc_store_upda_1_store_updates'
                             element: 'level'
                             value: 'testing'
+                        }
+                    },
+                    {
+                        table: 'sys_ui_view'
+                        id: 'Default view'
+                        key: {
+                            name: 'NULL'
                         }
                     },
                     {
@@ -3804,6 +4474,14 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_index'
+                        id: 'fb514085b9164a9ea0d7aa3ff586fa3d'
+                        key: {
+                            logical_table_name: 'x_snc_store_upda_1_store_updates'
+                            col_name_string: 'available_version'
+                        }
+                    },
+                    {
                         table: 'sys_dictionary'
                         id: 'fb68a22e317b48a599b2b1790fb120ed'
                         key: {
@@ -3832,6 +4510,15 @@ declare global {
                                     name: 'x_snc_store_upda_1.available_updates_user'
                                 }
                             }
+                        }
+                    },
+                    {
+                        table: 'sys_documentation'
+                        id: 'fedd9fccfb51be105543f4c69eefdc86'
+                        key: {
+                            name: 'var__m_sys_hub_flow_output_aadd1bccfb51be105543f4c69eefdc1a'
+                            element: 'status_message'
+                            language: 'en'
                         }
                     },
                     {

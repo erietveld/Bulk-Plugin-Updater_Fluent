@@ -9,6 +9,8 @@ export const batchPluginUpdaterMenu = ApplicationMenu({
     description: 'A comprehensive application for managing store plugin updates with an intuitive dashboard interface',
     active: true,
     order: 100,
+    category: '',
+    roles: ['snc_internal'],
 })
 
 // Create the main dashboard module
@@ -24,6 +26,11 @@ export const dashboardModule = Record({
         description: 'Main dashboard interface for viewing and managing store plugin updates',
         active: true,
         order: 100,
+        override_menu_roles: false,
+        require_confirmation: false,
+        sys_domain: 'global',
+        sys_domain_path: '/',
+        uncancelable: false,
     },
 })
 
@@ -37,6 +44,11 @@ export const configSeparator = Record({
         link_type: 'SEPARATOR',
         active: true,
         order: 200,
+        override_menu_roles: false,
+        require_confirmation: false,
+        sys_domain: 'global',
+        sys_domain_path: '/',
+        uncancelable: false,
     },
 })
 
@@ -53,5 +65,10 @@ export const storeUpdatesTable = Record({
         description: 'List view of all store update records in the system',
         active: true,
         order: 300,
+        override_menu_roles: false,
+        require_confirmation: false,
+        sys_domain: 'global',
+        sys_domain_path: '/',
+        uncancelable: false,
     },
 })

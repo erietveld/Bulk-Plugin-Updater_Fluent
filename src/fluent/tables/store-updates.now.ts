@@ -12,6 +12,9 @@ export const x_snc_store_upda_1_store_updates = Table({
             label: 'Application',
             referenceTable: 'sys_store_app',
             mandatory: true,
+            attributes: {
+                encode_utf8: false,
+            },
         }),
 
         // Available update counts
@@ -34,6 +37,9 @@ export const x_snc_store_upda_1_store_updates = Table({
         available_version: ReferenceColumn({
             label: 'Available Version',
             referenceTable: 'sys_app_version',
+            attributes: {
+                encode_utf8: false,
+            },
         }),
 
         // Batch processing level
@@ -58,16 +64,25 @@ export const x_snc_store_upda_1_store_updates = Table({
         latest_major_version: ReferenceColumn({
             label: 'Latest Major Version',
             referenceTable: 'sys_app_version',
+            attributes: {
+                encode_utf8: false,
+            },
         }),
 
         latest_minor_version: ReferenceColumn({
             label: 'Latest Minor Version',
             referenceTable: 'sys_app_version',
+            attributes: {
+                encode_utf8: false,
+            },
         }),
 
         latest_patch_version: ReferenceColumn({
             label: 'Latest Patch Version',
             referenceTable: 'sys_app_version',
+            attributes: {
+                encode_utf8: false,
+            },
         }),
 
         // Version level choices
@@ -110,4 +125,31 @@ export const x_snc_store_upda_1_store_updates = Table({
 
     // Make this a scriptable/remote table for ServiceNow Store integration
     scriptableTable: true,
+    index: [
+        {
+            name: 'index',
+            unique: false,
+            element: 'application',
+        },
+        {
+            name: 'index2',
+            unique: false,
+            element: 'available_version',
+        },
+        {
+            name: 'index3',
+            unique: false,
+            element: 'latest_major_version',
+        },
+        {
+            name: 'index4',
+            unique: false,
+            element: 'latest_minor_version',
+        },
+        {
+            name: 'index5',
+            unique: false,
+            element: 'latest_patch_version',
+        },
+    ],
 })
