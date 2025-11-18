@@ -1,7 +1,7 @@
 {
     "name": "x-snc-store-upda-1",
     "version": "1.0.0",
-    "description": "[BUILD AGENT GENERATED]:  A modern React-based application for batch installing ServiceNow Store updates with enhanced UI and backend automation capabilities",
+    "description": "[BUILD AGENT GENERATED]: A modern React-based application for batch installing ServiceNow Store updates with enhanced UI and backend automation capabilities",
     "license": "UNLICENSED",
     "scripts": {
         "build": "now-sdk build",
@@ -23,7 +23,11 @@
         "@tanstack/react-query": "^5.62.9",
         "@tanstack/react-query-devtools": "^5.62.9",
         "zustand": "^5.0.2",
-        "react-router-dom": "^7.1.3"
+        "react-router-dom": "^7.1.3",
+        "loglevel": "^1.9.2",
+        "ky": "^1.14.0",
+        "zod": "^4.1.12",
+        "nanoid": "^5.1.6"
     },
     "devDependencies": {
         "@servicenow/sdk": "4.0.2",

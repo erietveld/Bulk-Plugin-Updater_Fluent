@@ -50,20 +50,20 @@ import {
   useStoreUpdatesPagination,
   useStoreUpdatesStats
 } from '../../../hooks/useStoreUpdatesHybrid';
-import { useStoreUpdatesStore } from '../../../state/storeUpdatesStore';
+import { useStoreUpdatesStore } from '../../../stores/storeUpdatesStore';
 import { useStoreUpdatesSelection } from '../../../hooks/useStoreUpdatesSelection';
 import { useNotifications } from '../../../hooks/useNotifications';
 import { useEnhancedUserContext } from '../../../hooks/useUserContext'; // NEW: Use local store for admin role
-import { logger, createLogContext } from '../../../monitoring/logger';
+import { logger, createLogContext } from '../../../lib/logging/logger';
 
-import { GenericButton } from '../../../components/mantine/Button';
-import { GenericCard } from '../../../components/mantine/Card';
+import { GenericButton } from '../../../components/atoms/Button/Button';
+import { GenericCard } from '../../../components/atoms/Card/Card';
 
-import { StoreUpdatesDataGrid } from './StoreUpdatesDataGrid';
-import { StoreUpdatesFilters } from './StoreUpdatesFilters';
-import { useStoreUpdatesActions } from './StoreUpdatesActions';
-import { StatsGridSkeleton, DataGridSkeleton } from '../../../components/skeleton/SkeletonComponents';
-import { ApiErrorModal } from '../error/ApiErrorModal'; // NEW: For enhanced error handling
+import { StoreUpdatesDataGrid } from '../StoreUpdatesDataGrid/StoreUpdatesDataGrid';
+import { StoreUpdatesFilters } from '../StoreUpdatesFilters/StoreUpdatesFilters';
+import { useStoreUpdatesActions } from '../StoreUpdatesActions/StoreUpdatesActions';
+import { StatsGridSkeleton, DataGridSkeleton } from '../../../components/molecules/LoadingSkeleton/LoadingSkeleton';
+import { ApiErrorModal } from '../../error/ApiErrorModal'; // NEW: For enhanced error handling
 
 interface StoreUpdatesDashboardProps {
   className?: string;

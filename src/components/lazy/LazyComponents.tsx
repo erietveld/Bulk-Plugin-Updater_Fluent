@@ -17,7 +17,7 @@ export const ComponentLoadingFallback = () => (
 
 // Lazy load major components for better performance
 export const StoreUpdatesDashboard = lazy(() => 
-  import('../../client/components/mantine/StoreUpdatesDashboard')
+  import('../organisms/StoreUpdatesDashboard/StoreUpdatesDashboard')
 );
 
 export const DevelopmentDebugPanel = lazy(() => 
@@ -27,7 +27,7 @@ export const DevelopmentDebugPanel = lazy(() =>
 );
 
 export const NavigationHeader = lazy(() => 
-  import('../navigation/NavigationHeader').then(module => ({ 
+  import('../organisms/NavigationHeader/NavigationHeader').then(module => ({ 
     default: module.NavigationHeader 
   }))
 );
@@ -45,9 +45,7 @@ export const CDNResourceDebugger = lazy(() =>
 );
 
 export const ValidationStatusCard = lazy(() => 
-  import('../../client/components/validation/ValidationStatusCard').then(module => ({ 
-    default: module.ValidationStatusCard 
-  }))
+  import('../molecules/ValidationStatusCard/ValidationStatusCard')
 );
 
 // Higher-order component for consistent loading states

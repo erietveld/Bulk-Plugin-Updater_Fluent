@@ -11,7 +11,7 @@
 
 import { create } from 'zustand';
 import { subscribeWithSelector, devtools } from 'zustand/middleware';
-import { logger, createLogContext } from '../monitoring/logger';
+import { logger, createLogContext } from '../lib/logging/logger';
 import type { StoreUpdate } from '../hooks/useStoreUpdatesHybrid';
 
 export interface StoreUpdatesFilters {

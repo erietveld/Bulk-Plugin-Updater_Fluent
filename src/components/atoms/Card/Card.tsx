@@ -5,7 +5,7 @@
 import React, { forwardRef, useMemo } from 'react';
 import { Card, CardProps, Group, Text, ActionIcon, Skeleton, Alert } from '@mantine/core';
 import { IconAlertCircle, IconX } from '@tabler/icons-react';
-import { logger, createLogContext } from '../../monitoring/logger';
+import { logger, createLogContext } from '../../../lib/logging/logger';
 
 export interface GenericCardProps extends Omit<CardProps, 'onClick'> {
   title?: React.ReactNode;

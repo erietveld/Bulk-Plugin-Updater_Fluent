@@ -3,14 +3,14 @@
 // Implements strategic error boundary placement from core-principles.md
 
 import React, { Component, ReactNode } from 'react';
-import { logger, createLogContext } from '../monitoring/logger';
-import { getString } from '../utils/typeRefinements';
+import { logger, createLogContext } from '../../lib/logging/logger';
+import { getString } from '../../utils/typeRefinements';
 
 export interface ErrorBoundaryState {
   hasError: boolean;
-  error?: Error;
-  errorInfo?: React.ErrorInfo;
-  errorId?: string;
+  error?: Error | undefined;
+  errorInfo?: React.ErrorInfo | undefined;
+  errorId?: string | undefined;
 }
 
 interface Props {

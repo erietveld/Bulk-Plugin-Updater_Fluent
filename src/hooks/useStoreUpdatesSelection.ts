@@ -3,7 +3,7 @@
 // Following Architecture.md Section 5 - Zustand selective subscriptions
 
 import React, { useCallback, useMemo } from 'react';
-import { logger } from '../monitoring/logger';
+import { logger } from '../lib/logging/logger';
 import type { StoreUpdate } from './useStoreUpdatesHybrid';
 
 export interface StoreUpdatesSelection {

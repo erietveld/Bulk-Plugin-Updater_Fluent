@@ -4,7 +4,7 @@
 
 import React, { forwardRef, useCallback } from 'react';
 import { Button, ButtonProps, Loader } from '@mantine/core';
-import { logger, createLogContext } from '../../monitoring/logger';
+import { logger, createLogContext } from '../../../lib/logging/logger.js';
 
 export interface GenericButtonProps extends Omit<ButtonProps, 'onClick'> {
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void | Promise<void>;

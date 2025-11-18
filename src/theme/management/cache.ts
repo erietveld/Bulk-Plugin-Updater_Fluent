@@ -4,7 +4,7 @@
 
 import { createTheme, MantineTheme } from '@mantine/core';
 import { ThemeValidationResult, validateTheme } from './validation';
-import { logger, createLogContext } from '../../monitoring/logger';
+import { logger, createLogContext } from '../../lib/logging/logger';
 import { getString, getNumber } from '../../utils/typeRefinements';
 
 export interface CachedTheme {

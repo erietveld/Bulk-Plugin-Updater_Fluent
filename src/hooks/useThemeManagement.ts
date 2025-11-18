@@ -9,7 +9,7 @@ import { usePerformanceStore } from '../stores/performanceStore';
 import { createThemeConfig, getActiveThemes, ThemeKey, DEFAULT_THEME } from '../config/themes';
 import { getCachedTheme } from '../theme/management/cache';
 import { debugService } from '../services/debugService';
-import { logger, createLogContext } from '../monitoring/logger';
+import { logger, createLogContext } from '../lib/logging/logger';
 import { getString } from '../utils/typeRefinements';
 
 export const useThemeManagement = () => {

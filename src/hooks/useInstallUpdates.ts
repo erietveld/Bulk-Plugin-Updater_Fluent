@@ -6,9 +6,11 @@
 
 import { useCallback, useRef, useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiService } from '../api/apiService';
+import { nanoid } from 'nanoid';
+import { getString } from '../utils/typeRefinements';
+import { apiService } from '../lib/api/apiService';
 import { useBatchProgressStore } from '../stores/batchProgressStore';
-import { logger, createLogContext } from '../monitoring/logger';
+import { logger, createLogContext } from '../lib/logging/logger';
 import { useNotifications } from './useNotifications';
 import { useApiErrorModal } from './useApiErrorModal'; // NEW: For enhanced error handling
 import type { useStoreUpdatesSelection } from './useStoreUpdatesSelection';
@@ -19,7 +21,7 @@ export interface InstallUpdatesResponse {
   success: boolean;
   progress_id: string;
   status_message: string;
-  http_status: string; // NEW: HTTP status from CICD API
+  http_status: number; // NEW: HTTP status from CICD API
   app_count: number;
   apps_requested: string;
   timestamp: string;
@@ -30,7 +32,7 @@ export interface InstallUpdatesError {
   success: false;
   error: string;
   message: string;
-  http_status?: string; // NEW: HTTP status from failed API call
+  http_status?: number; // NEW: HTTP status from failed API call
   status_message?: string; // NEW: Additional status info
   timestamp: string;
 }
@@ -95,14 +97,37 @@ export const useInstallUpdates = (
     selectedCount: 0
   });
 
-  // Service layer method for install updates API call
-  const callInstallUpdatesApi = useCallback(async (selectedIds: string[]): Promise<InstallUpdatesResponse> => {
+  // STEP 6: Service layer method with correlation tracking
+  const callInstallUpdatesApi = useCallback(async (selectedIds: string[], correlationId?: string): Promise<InstallUpdatesResponse> => {
+    // STEP 6: Enhanced source logging with correlation at hook layer
+    logger.info('🎯 INSTALL UPDATES: Starting at Hook layer', createLogContext({
+      correlationId,
+      selectedCount: selectedIds.length,
+      selectedIds: selectedIds.slice(0, 3).join(',') + (selectedIds.length > 3 ? '...' : ''), // Log first 3 IDs
+      layer: 'react_hook',
+      operation: 'install_updates_hook_start',
+      hookName: 'useInstallUpdates'
+    }));
+
+    // STEP 6: Legacy log for compatibility (will be removed in Step 9)
     logger.info('Calling install updates API', createLogContext({
       selectedCount: selectedIds.length,
       selectedIds: selectedIds.slice(0, 5) // Log first 5 IDs only
     }));
 
     const response = await apiService.installUpdates(selectedIds);
+    
+    // STEP 6: Source logging - API response at hook layer
+    logger.info('📨 INSTALL UPDATES: API response received at Hook layer', createLogContext({
+      correlationId,
+      layer: 'react_hook',
+      operation: 'api_response_received_hook',
+      hookName: 'useInstallUpdates',
+      success: response.success,
+      progressId: response.progress_id,
+      appCount: response.app_count
+    }));
+    
     return response;
   }, []);
 
@@ -279,19 +304,53 @@ export const useInstallUpdates = (
 
   // TanStack Query mutation for install updates
   const installUpdatesMutation = useMutation({
-    mutationFn: callInstallUpdatesApi,
-    onMutate: (selectedIds: string[]) => {
+    mutationFn: (args: { selectedIds: string[], correlationId?: string }) => {
+      return callInstallUpdatesApi(args.selectedIds, args.correlationId);
+    },
+    onMutate: (args: { selectedIds: string[], correlationId?: string }) => {
+      const { selectedIds } = args;
+      // STEP 6: Generate beautiful correlation ID for end-to-end tracking
+      const correlationId = `api_${nanoid(10)}`;
+      
       // Start operation in store
       const operationId = batchProgressStore.startOperation('install-all', selectedIds);
       
+      // STEP 6: Enhanced source logging with correlation at mutation start
+      logger.info('🚀 INSTALL UPDATES: Mutation started at Hook layer', createLogContext({
+        correlationId,
+        operationId,
+        selectedCount: selectedIds.length,
+        layer: 'react_hook',
+        operation: 'mutation_start',
+        hookName: 'useInstallUpdates',
+        mutationType: 'install_updates'
+      }));
+      
+      // STEP 6: Legacy log for compatibility (will be removed in Step 9)
       logger.info('Install updates mutation started', createLogContext({
         operationId,
         selectedCount: selectedIds.length
       }));
       
-      return { operationId };
+      return { operationId, correlationId };
     },
-    onSuccess: (response: InstallUpdatesResponse, selectedIds: string[]) => {
+    onSuccess: (response: InstallUpdatesResponse, args: { selectedIds: string[], correlationId?: string }, context?: { operationId: string; correlationId: string }) => {
+      const { selectedIds } = args;
+      const correlationId = context?.correlationId || 'unknown';
+      
+      // STEP 6: Enhanced source logging with correlation at success
+      logger.info('✅ INSTALL UPDATES: API call successful at Hook layer', createLogContext({
+        correlationId,
+        progressId: response.progress_id,
+        appCount: response.app_count,
+        statusMessage: response.status_message,
+        httpStatus: response.http_status,
+        layer: 'react_hook',
+        operation: 'api_success_hook',
+        hookName: 'useInstallUpdates'
+      }));
+      
+      // STEP 6: Legacy log for compatibility (will be removed in Step 9)
       logger.info('Install updates API call successful', createLogContext({
         progressId: response.progress_id,
         appCount: response.app_count,
@@ -299,62 +358,21 @@ export const useInstallUpdates = (
         httpStatus: response.http_status // NEW: Log http_status
       }));
 
-      // NEW: Check http_status for potential issues even on "successful" API calls
-      if (response.http_status && response.http_status !== '200') {
-        let errorMessage = `Installation API returned HTTP status ${response.http_status}`;
-        
-        // Special handling for authentication failures
-        if (response.http_status === '401') {
-          showAuthError(
-            'Authentication failed (HTTP 401). Please check the API user credentials in the Subflow configuration.',
-            response.progress_id
-          );
-        } else if (response.http_status === '403') {
-          showHttpError(
-            'Permission Error',
-            'Access denied (HTTP 403). The API user may not have sufficient permissions to perform this operation.',
-            response.http_status,
-            response.status_message,
-            response.progress_id
-          );
-        } else if (response.http_status === '500') {
-          showServerError(
-            'Internal server error occurred during installation. Please try again or contact support.',
-            response.progress_id
-          );
-        } else {
-          // Other HTTP error codes
-          errorMessage = `Installation failed with HTTP status ${response.http_status}. ${response.status_message || ''}`;
-          
-          showHttpError(
-            'Installation Failed',
-            errorMessage,
-            response.http_status,
-            response.status_message,
-            response.progress_id
-          );
-        }
-        
-        // Update store with error
-        batchProgressStore.errorOperation(errorMessage, {
-          http_status: response.http_status,
-          status_message: response.status_message
-        });
-        
-        logger.error('Install updates failed due to HTTP status', 
-          new Error(errorMessage),
-          createLogContext({
-            progressId: response.progress_id,
-            httpStatus: response.http_status,
-            statusMessage: response.status_message
-          })
-        );
-        
-        return; // Don't proceed with progress polling
-      }
+      // REMOVED: Hook layer error handling now handled by centralized processor
+      // Central processor detects and handles nested http_status errors correctly
 
       // Update store with progress worker ID
       batchProgressStore.setProgressWorkerId(response.progress_id);
+      
+      // STEP 6: Source logging - Starting progress polling with correlation
+      logger.info('🔄 INSTALL UPDATES: Starting progress polling at Hook layer', createLogContext({
+        correlationId,
+        progressId: response.progress_id,
+        layer: 'react_hook',
+        operation: 'progress_polling_start',
+        hookName: 'useInstallUpdates',
+        pollingInterval
+      }));
       
       // Start progress polling using CI/CD Progress API
       startProgressPolling(response.progress_id);
@@ -367,63 +385,136 @@ export const useInstallUpdates = (
       // Call custom success handler
       onSuccess?.(response);
     },
-    onError: (error: any, selectedIds: string[]) => {
-      // FIXED: Reduced logging verbosity - only log user-facing error summary to avoid duplicates
+    onError: (error: any, args: { selectedIds: string[], correlationId?: string }, context?: { operationId: string; correlationId: string }) => {
+      const { selectedIds } = args;
+      const correlationId = context?.correlationId || 'unknown';
+      
+      // STEP 6: Enhanced error logging with correlation at hook error handler
+      logger.info('❌ INSTALL UPDATES: Error at Hook layer', createLogContext({
+        correlationId,
+        selectedCount: selectedIds.length,
+        layer: 'react_hook',
+        operation: 'mutation_error_hook',
+        hookName: 'useInstallUpdates',
+        errorType: typeof error,
+        hasResponseBody: !!error.responseBody,
+        httpStatus: error.responseBody?.http_status || error.httpStatus || 'unknown'
+      }));
+      
+      // STEP 6: Legacy log for compatibility (will be removed in Step 9) - reduced verbosity
       logger.info('Displaying error to user', createLogContext({
         selectedCount: selectedIds.length,
         httpStatus: error.responseBody?.http_status || error.httpStatus || 'unknown',
         errorType: error.responseBody?.error || error.errorCode || 'unknown'
       }));
 
-      // FIXED: Enhanced error handling with better logging and undefined handling
+      // FIXED: Extract original ApiError from TanStack Query wrapper
+      // TanStack Query wraps our ApiError in a basic Error, losing custom properties
+      let originalError = error;
+      
+      // Check for TanStack Query error patterns
+      if (error.cause && typeof error.cause === 'object') {
+        originalError = error.cause; // TanStack Query stores original in 'cause'
+      } else if (error.originalError && typeof error.originalError === 'object') {
+        originalError = error.originalError; // Alternative pattern
+      } else if (error.request && error.request.error) {
+        originalError = error.request.error; // Another possible location
+      }
+
+      // FIXED: Enhanced error handling with better logging and type safety
       let errorTitle = 'Installation Failed';
       let errorMessage = 'Failed to start installation process';
-      let httpStatus: string | undefined;
-      let statusMessage: string | undefined;
+      let httpStatus: string;
+      let statusMessage: string;
       
-      // FIXED: Check if error contains structured response body information with detailed logging
-      if (error.responseBody) {
-        // Use the actual error details from the response body
-        errorMessage = error.responseBody.message || error.message || errorMessage;
-        httpStatus = String(error.responseBody.http_status || error.httpStatus || '');
-        statusMessage = error.responseBody.status_message || error.statusMessage || '';
-      } else if (error.httpStatus) {
-        // Fallback to error properties if no response body
-        httpStatus = String(error.httpStatus);
-        statusMessage = error.statusMessage || '';
-        errorMessage = error.message || errorMessage;
+      // FIXED: Check if originalError contains structured response body information with detailed logging
+      if (originalError.responseBody) {
+        // Use the actual error details from the response body with type safety
+        errorMessage = getString(originalError.responseBody.message || originalError.message, errorMessage);
+        httpStatus = getString(originalError.responseBody.http_status || originalError.httpStatus, '');
+        statusMessage = getString(originalError.responseBody.status_message || originalError.statusMessage, '');
+      } else if (originalError.httpStatus) {
+        // Fallback to error properties if no response body with type safety
+        httpStatus = getString(originalError.httpStatus, '');
+        statusMessage = getString(originalError.statusMessage, '');
+        errorMessage = getString(originalError.message, errorMessage);
       } else {
-        errorMessage = error.message || errorMessage;
+        errorMessage = getString(originalError.message || error.message, errorMessage);
+        httpStatus = '';
+        statusMessage = '';
       }
+
+      // DEBUG: Log error properties for button debugging - ENHANCED to show all error properties
+      logger.info('🔧 DEBUG: useInstallUpdates error analysis', createLogContext({
+        correlationId,
+        layer: 'react_hook',
+        operation: 'error_analysis_debug',
+        hookName: 'useInstallUpdates',
+        // Original TanStack Query wrapped error
+        errorType: typeof error,
+        errorConstructor: error.constructor.name,
+        errorKeys: Object.keys(error || {}),
+        // Extracted original error
+        originalErrorType: typeof originalError,
+        originalErrorConstructor: originalError.constructor.name,
+        originalErrorKeys: Object.keys(originalError || {}),
+        // Error properties from original error
+        errorSource: originalError.errorSource,
+        credentialObject: originalError.credentialObject,
+        httpStatus,
+        statusMessage,
+        errorMessage: errorMessage.substring(0, 50) + '...',
+        hasErrorSource: !!originalError.errorSource,
+        hasCredentialObject: !!originalError.credentialObject,
+        willShowButton: (httpStatus === '401' || httpStatus === '403') && originalError.errorSource === 'servicenow-subflow' && !!originalError.credentialObject,
+        // ADDED: Check if properties exist with different case or structure
+        errorSourceAlt: getString(originalError.error_source || originalError.source),
+        credentialObjectAlt: getString(originalError.credential_object || originalError.credentials),
+        responseBodyKeys: originalError.responseBody ? Object.keys(originalError.responseBody) : []
+      }));
 
       // FIXED: Display appropriate error modal based on the actual HTTP status from response body
       if (httpStatus === '401') {
         showAuthError(
           errorMessage,
-          undefined // Progress ID not available at this stage
+          undefined, // Progress ID not available at this stage
+          getString(originalError.errorSource), // Use type-safe getter
+          getString(originalError.credentialObject) // Use type-safe getter
         );
       } else if (httpStatus === '403') {
         showHttpError(
-          'Permission Error',
+          getString(originalError.errorSource) === 'servicenow-subflow' ? 'Subflow Permission Error' : 'Permission Error',
           errorMessage,
           httpStatus,
-          statusMessage
+          statusMessage,
+          undefined,
+          getString(originalError.errorSource), // Use type-safe getter
+          getString(originalError.credentialObject) // Use type-safe getter
         );
       } else if (httpStatus === '404') {
         showHttpError(
           'Service Not Found',
           errorMessage,
           httpStatus,
-          statusMessage
+          statusMessage,
+          undefined,
+          getString(originalError.errorSource), // Use type-safe getter
+          getString(originalError.credentialObject) // Use type-safe getter
         );
       } else if (httpStatus === '500' || error.message.includes('HTTP 500')) {
         showServerError(
-          errorMessage
+          errorMessage,
+          undefined // Progress ID not available
         );
       } else if (error.message && error.message.includes('Failed to fetch')) {
         showHttpError(
           'Connection Error',
-          'Network connection failed. Please check your connection and try again.'
+          'Network connection failed. Please check your connection and try again.',
+          undefined,
+          undefined,
+          undefined,
+          getString(originalError.errorSource), // Use type-safe getter
+          getString(originalError.credentialObject) // Use type-safe getter
         );
       } else {
         // Generic error - use the enhanced modal with available details
@@ -431,17 +522,33 @@ export const useInstallUpdates = (
           errorTitle,
           errorMessage,
           httpStatus || undefined, // Don't pass empty string
-          statusMessage || undefined // Don't pass empty string
+          statusMessage || undefined, // Don't pass empty string
+          undefined,
+          getString(originalError.errorSource), // Use type-safe getter
+          getString(originalError.credentialObject) // Use type-safe getter
         );
       }
 
-      // Update store with error - use enhanced error message
+      // Update store with error - use enhanced error message with type safety
       batchProgressStore.errorOperation(errorMessage, {
         httpStatus,
         statusMessage,
-        errorCode: error.responseBody?.error || error.errorCode,
-        isFromResponseBody: error.isFromResponseBody || false
+        errorCode: getString(originalError.responseBody?.error || originalError.errorCode),
+        isFromResponseBody: originalError.isFromResponseBody || false
       });
+
+      // STEP 6: Final error logging with correlation
+      logger.info('💥 INSTALL UPDATES: Final error handling at Hook layer', createLogContext({
+        correlationId,
+        layer: 'react_hook',
+        operation: 'final_error_handling',
+        hookName: 'useInstallUpdates',
+        errorMessage,
+        httpStatus,
+        statusMessage,
+        errorCode: getString(originalError.responseBody?.error || originalError.errorCode),
+        isFromResponseBody: originalError.isFromResponseBody || false
+      }));
 
       // Call custom error handler
       onError?.(error);
@@ -475,7 +582,7 @@ export const useInstallUpdates = (
 
     // Hide modal and start installation
     hideConfirmationModal();
-    installUpdatesMutation.mutate(selectedIds);
+    installUpdatesMutation.mutate({ selectedIds });
   }, [selectionHook.selection.selectedIds, hideConfirmationModal, installUpdatesMutation.mutate]);
 
   // Cleanup on unmount
@@ -488,8 +595,8 @@ export const useInstallUpdates = (
   // Public interface
   return {
     // Mutation
-    installUpdates: installUpdatesMutation.mutate,
-    installUpdatesAsync: installUpdatesMutation.mutateAsync,
+    installUpdates: (selectedIds: string[]) => installUpdatesMutation.mutate({ selectedIds }),
+    installUpdatesAsync: (selectedIds: string[]) => installUpdatesMutation.mutateAsync({ selectedIds }),
     installAllMutation: installUpdatesMutation, // Legacy alias for backward compatibility
     
     // Mutation state

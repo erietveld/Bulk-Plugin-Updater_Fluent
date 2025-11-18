@@ -49,10 +49,10 @@ import type { useStoreUpdatesFiltering, StoreUpdate } from '../../../hooks/useSt
 import { useInstallUpdates } from '../../../hooks/useInstallUpdates';
 import { useBatchProgressStore } from '../../../stores/batchProgressStore';
 import { useEnhancedUserContext } from '../../../hooks/useUserContext'; // FIXED: Use proper admin role detection
-import { logger } from '../../../monitoring/logger';
-import { GenericButton } from '../../../components/mantine/Button';
-import { SelectedItemsOverlay } from './SelectedItemsOverlay';
-import { apiService } from '../../../api/apiService';
+import { logger } from '../../../lib/logging/logger';
+import { GenericButton } from '../../atoms/Button/Button';
+import { SelectedItemsOverlay } from '../SelectedItemsOverlay/SelectedItemsOverlay';
+import { apiService } from '../../../lib/api/apiService';
 import { storeUpdatesQueryKeys } from '../../../hooks/useStoreUpdatesHybrid'; // NEW: For cache invalidation
 
 interface StoreUpdatesActionsProps {

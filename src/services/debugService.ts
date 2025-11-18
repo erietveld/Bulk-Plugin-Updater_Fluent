@@ -2,7 +2,7 @@
 // Debug functionality service
 // Following atomic design principle: ServiceNow Services handle logic
 
-import { logger, createLogContext } from '../monitoring/logger';
+import { logger, createLogContext } from '../lib/logging/logger';
 
 export class DebugService {
   private static instance: DebugService;

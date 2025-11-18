@@ -20,7 +20,7 @@ Record({
         sys_id: 'aadd1bccfb51be105543f4c69eefdc1a',
         access: 'public',
         active: true,
-        authored_on_release_version: '28100',
+        authored_on_release_version: 28100,
         callable_by_client_api: false,
         compiler_build: 'glide-zurich-07-01-2025__patch3-10-16-2025_10-24-2025_0919.zip',
         copied_from: 'fc2cbc1bfb0d72105543f4c69eefdca0',
@@ -67,8 +67,7 @@ Record({
         tag: '627be2e3fb49b6105543f4c69eefdcab',
         type: 'basic_auth',
         use_context: false,
-        use_high_security: false,
-        user_name: 'Plugin Installer',
+        use_high_security: false
     },
 })
 

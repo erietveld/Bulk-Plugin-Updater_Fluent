@@ -4,7 +4,7 @@
 // Provides user-friendly error modals for different HTTP status codes
 
 import { useState, useCallback } from 'react';
-import { logger, createLogContext } from '../monitoring/logger';
+import { logger, createLogContext } from '../lib/logging/logger';
 
 export interface ApiErrorDetails {
   title: string;
@@ -38,7 +38,9 @@ export const useApiErrorModal = () => {
     message: string, 
     httpStatus?: string, 
     statusMessage?: string, 
-    progressId?: string
+    progressId?: string,
+    errorSource?: string,
+    credentialObject?: string
   ) => {
     const errorDetails: ApiErrorDetails = {
       title,
@@ -52,8 +54,49 @@ export const useApiErrorModal = () => {
     if (statusMessage) errorDetails.statusMessage = statusMessage;
     if (progressId) errorDetails.progressId = progressId;
 
-    // Add actionable items for specific errors
-    if (httpStatus === '401') {
+    // DEBUG: Log parameters for button debugging
+    logger.info('🔧 DEBUG: useApiErrorModal showHttpError parameters', createLogContext({
+      title,
+      httpStatus,
+      errorSource,
+      credentialObject,
+      willCreateButton: (httpStatus === '401' || httpStatus === '403') && errorSource === 'servicenow-subflow' && !!credentialObject,
+      httpStatusCheck: httpStatus === '401' || httpStatus === '403',
+      errorSourceCheck: errorSource === 'servicenow-subflow',
+      credentialObjectCheck: !!credentialObject
+    }));
+
+    // Enhanced actions for subflow authentication errors
+    if ((httpStatus === '401' || httpStatus === '403') && errorSource === 'servicenow-subflow' && credentialObject) {
+      const baseUrl = window.location.origin; // e.g., https://crstudio.service-now.com
+      const credentialUrl = `${baseUrl}/now/nav/ui/classic/params/target/basic_auth_credentials_list.do%3Fsysparm_query%3Dname%253DPlugin%2520CICD%2520Auth%26sysparm_first_row%3D1%26sysparm_view%3D`;
+      
+      errorDetails.title = httpStatus === '401' 
+        ? 'Subflow Authentication Error' 
+        : 'Subflow Permission Error';
+        
+      errorDetails.actions = [
+        {
+          label: 'Fix ServiceNow Credentials',
+          action: () => {
+            logger.info('User opening ServiceNow credentials page', createLogContext({
+              httpStatus,
+              progressId,
+              credentialObject,
+              credentialUrl: credentialUrl.substring(0, 100) // Log first 100 chars
+            }));
+            window.open(credentialUrl, '_blank');
+          }
+        }
+      ];
+      
+      logger.info('🔧 DEBUG: ServiceNow credentials button created', createLogContext({
+        title: errorDetails.title,
+        hasActions: !!errorDetails.actions,
+        actionsCount: errorDetails.actions?.length || 0,
+        credentialUrl: credentialUrl.substring(0, 100)
+      }));
+    } else if (httpStatus === '401') {
       errorDetails.actions = [
         {
           label: 'Check API User Setup',
@@ -75,18 +118,27 @@ export const useApiErrorModal = () => {
       title,
       httpStatus,
       errorType: 'http',
-      progressId
+      progressId,
+      errorSource,
+      credentialObject
     }));
-  }, [closeModal]);
+  }, []);
 
-  // Show authentication error (401)
-  const showAuthError = useCallback((message: string, progressId?: string) => {
+  // Show authentication error (401) - enhanced for subflow support
+  const showAuthError = useCallback((
+    message: string, 
+    progressId?: string, 
+    errorSource?: string, 
+    credentialObject?: string
+  ) => {
     showHttpError(
       'Authentication Error',
       message,
       '401',
       'Authentication failed',
-      progressId
+      progressId,
+      errorSource,
+      credentialObject
     );
   }, [showHttpError]);
 

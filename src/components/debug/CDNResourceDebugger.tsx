@@ -7,7 +7,7 @@ import { IconExternalLink } from '@tabler/icons-react';
 import { usePerformanceTracking } from '../../hooks/usePerformanceTracking';
 import { useNotifications } from '../../hooks/useNotifications';
 import { debugService } from '../../services/debugService';
-import { logger, createLogContext } from '../../monitoring/logger';
+import { logger, createLogContext } from '../../lib/logging/logger';
 
 export const CDNResourceDebugger: React.FC = () => {
   // Business logic from custom hooks

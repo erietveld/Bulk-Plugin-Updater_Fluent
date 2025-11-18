@@ -14,34 +14,18 @@
 
 import { useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useStoreUpdatesStore } from '../state/storeUpdatesStore';
+import { useStoreUpdatesStore } from '../stores/storeUpdatesStore';
 import { useEnhancedUserContext, useQuickStats } from './useUserContext';
-import { apiService } from '../api/apiService';
-import { logger, createLogContext } from '../monitoring/logger';
+import { useApiErrorModal } from './useApiErrorModal'; // NEW: For enhanced error handling
+import { apiService } from '../lib/api/apiService';
+import { logger, createLogContext } from '../lib/logging/logger';
 import type { ServiceNowRecord } from '../types/api';
+import { StoreUpdateApiResponseSchema, StoreUpdateValidated } from '../types/api';
+import { nanoid } from 'nanoid'; // ACTION 01B: Professional correlation ID generation
 import React from 'react';
 
-// Types for Store Updates - UPDATED: Added sys_store_app fields for expandable details
-export interface StoreUpdate extends ServiceNowRecord {
-  name: string;
-  level: 'major' | 'minor' | 'patch';
-  batch_level: 'major' | 'minor' | 'patch';
-  installed_version: string;
-  latest_version_level: 'major' | 'minor' | 'patch';
-  major_count: number;
-  minor_count: number;
-  patch_count: number;
-  // Referenced fields from application (sys_store_app table)
-  application_name?: string;                   // Existing: Clean application name
-  application_install_date?: string;          // NEW: Installation date for details
-  application_short_description?: string;     // NEW: App description for details
-  application_version?: string;               // NEW: App version for details
-  // Referenced fields from available_version (sys_app_version table)
-  available_version_publish_date?: string;     // Existing: publish_date
-  available_version_short_description?: string; // Existing: short_description
-  available_version_version?: string;          // Existing: actual version number
-  available_version_source_app_id?: string;    // Existing: source app ID for App Manager link
-}
+// ACTION 01B: Use validated type from zod schema instead of manual interface
+export type StoreUpdate = StoreUpdateValidated;
 
 // Query keys for TanStack Query (Section 4) - UPDATED to force new cache for expandable details fields
 export const storeUpdatesQueryKeys = {
@@ -65,6 +49,23 @@ export const useStoreUpdatesServerState = () => {
     queryFn: async (): Promise<StoreUpdate[]> => {
       const startTime = performance.now();
       
+      // ACTION 01B: Generate professional correlation ID using nanoid
+      const correlationId = `hybrid_${nanoid(10)}`;
+      
+      // STEP 6: Enhanced source logging with correlation at hook layer
+      logger.info('🎯 STORE UPDATES: Starting fetch at Hook layer', createLogContext({
+        correlationId,
+        pattern: '2C-dynamic-data',
+        queryKey: storeUpdatesQueryKeys.lists(),
+        filterType: 'client-side',
+        filterCondition: 'batch_level=latest_version_level',
+        newFields: ['application.install_date', 'application.short_description', 'application.version'],
+        layer: 'react_hook',
+        operation: 'store_updates_fetch_start',
+        hookName: 'useStoreUpdatesHybrid'
+      }));
+      
+      // STEP 6: Legacy log for compatibility (will be removed in Step 9)
       logger.info('Fetching Store Updates with expandable details fields (Pattern 2C)', createLogContext({
         pattern: '2C-dynamic-data',
         queryKey: storeUpdatesQueryKeys.lists(),
@@ -91,11 +92,21 @@ export const useStoreUpdatesServerState = () => {
         ];
 
         if (logger.isDebugEnabled()) {
-          logger.info('🔍 HYBRID: Fields being sent to API (with expandable details)', { fieldsArray });
-          logger.info('🔍 HYBRID: Dot-walked fields', { dotWalkedFields: fieldsArray.filter(f => f.includes('.')) });
-          logger.info('🔍 HYBRID: NEW expandable fields', { expandableFields: ['application.install_date', 'application.short_description', 'application.version'] });
-          logger.info('🔍 HYBRID: Client-side filtering will be applied for batch_level=latest_version_level');
+          logger.info('🔍 HYBRID: Fields being sent to API (with expandable details)', { fieldsArray, correlationId });
+          logger.info('🔍 HYBRID: Dot-walked fields', { dotWalkedFields: fieldsArray.filter(f => f.includes('.')), correlationId });
+          logger.info('🔍 HYBRID: NEW expandable fields', { expandableFields: ['application.install_date', 'application.short_description', 'application.version'], correlationId });
+          logger.info('🔍 HYBRID: Client-side filtering will be applied for batch_level=latest_version_level', { correlationId });
         }
+
+        // STEP 6: Enhanced API call with correlation tracking
+        logger.info('📡 STORE UPDATES: Making API call with correlation tracking', createLogContext({
+          correlationId,
+          endpoint: '/api/now/table/x_snc_store_upda_1_store_updates',
+          layer: 'react_hook',
+          operation: 'api_call_start',
+          hookName: 'useStoreUpdatesHybrid',
+          fieldsCount: fieldsArray.length
+        }));
 
         // FIXED: TypeScript error - provide full config with defaults for all required fields
         const response = await apiService.get<{
@@ -113,7 +124,45 @@ export const useStoreUpdatesServerState = () => {
 
         // Extract records from response properly
         const responseData = response as any; // Handle apiService typing
-        const rawRecords: any[] = responseData?.result || [];
+        let rawRecords: any[] = [];
+        
+        // ACTION 01B: Validate API response with zod schema for runtime type safety
+        try {
+          const validatedResponse = StoreUpdateApiResponseSchema.parse(responseData);
+          rawRecords = validatedResponse.result;
+          
+          // STEP 6: Enhanced API response logging with correlation and validation success
+          logger.info('📨 STORE UPDATES: API response validated successfully at Hook layer', createLogContext({
+            correlationId,
+            layer: 'react_hook',
+            operation: 'api_response_validated',
+            hookName: 'useStoreUpdatesHybrid',
+            recordCount: rawRecords.length,
+            hasData: rawRecords.length > 0,
+            validationSuccess: true
+          }));
+          
+        } catch (validationError) {
+          // ACTION 01B: Handle schema validation failures
+          logger.error('❌ STORE UPDATES: Schema validation failed - API structure changed', validationError instanceof Error ? validationError : new Error(String(validationError)), createLogContext({
+            correlationId,
+            layer: 'react_hook',
+            operation: 'schema_validation_failed',
+            hookName: 'useStoreUpdatesHybrid',
+            validationError: validationError instanceof Error ? validationError.message : String(validationError)
+          }));
+          
+          // Still try to process the response but log the schema mismatch
+          rawRecords = responseData?.result || [];
+          
+          logger.warn('⚠️ STORE UPDATES: Continuing with unvalidated data', createLogContext({
+            correlationId,
+            layer: 'react_hook',
+            operation: 'fallback_to_unvalidated',
+            hookName: 'useStoreUpdatesHybrid',
+            recordCount: rawRecords.length
+          }));
+        }
         
         // DEBUG: Log response structure before client-side filtering
         if (logger.isDebugEnabled()) {
@@ -127,7 +176,8 @@ export const useStoreUpdatesServerState = () => {
                   totalRecords: rawRecords.length,
                   filterType: 'client-side',
                   filterCondition: 'batch_level=latest_version_level',
-                  hasExpandableFields: true
+                  hasExpandableFields: true,
+                  correlationId // STEP 6: Add correlation to debug logs
                 },
                 recordKeys: recordKeys,
                 dotWalkedKeys: recordKeys.filter(k => k.includes('.')),
@@ -153,7 +203,8 @@ export const useStoreUpdatesServerState = () => {
                 totalRecords: rawRecords.length,
                 filterType: 'client-side',
                 filterCondition: 'batch_level=latest_version_level',
-                hasExpandableFields: true
+                hasExpandableFields: true,
+                correlationId // STEP 6: Add correlation to debug logs
               },
               recordKeys: [],
               dotWalkedKeys: [],
@@ -202,6 +253,18 @@ export const useStoreUpdatesServerState = () => {
           r.application_install_date || r.application_short_description || r.application_version
         );
         
+        // STEP 6: Enhanced success logging with correlation
+        logger.info('✅ STORE UPDATES: Fetch successful at Hook layer', createLogContext({
+          correlationId,
+          layer: 'react_hook',
+          operation: 'fetch_success_hook',
+          hookName: 'useStoreUpdatesHybrid',
+          totalRecordsFromAPI: allRecords.length,
+          filteredRecords: filteredRecords.length,
+          duration: Math.round(duration)
+        }));
+        
+        // STEP 6: Legacy log for compatibility (will be removed in Step 9)
         logger.info('TanStack Query fetch completed with expandable details', createLogContext({
           pattern: '2C-dynamic-data',
           totalRecordsFromAPI: allRecords.length,
@@ -219,6 +282,7 @@ export const useStoreUpdatesServerState = () => {
 
         if (logger.isDebugEnabled()) {
           logger.info('🔍 HYBRID: Filtering Results & Sample Data', {
+            correlationId, // STEP 6: Add correlation to debug logs
             filteringResults: {
               totalFromAPI: allRecords.length,
               afterFiltering: filteredRecords.length,
@@ -244,6 +308,18 @@ export const useStoreUpdatesServerState = () => {
       } catch (error) {
         const duration = performance.now() - startTime;
         
+        // STEP 6: Enhanced error logging with correlation at hook error handler
+        logger.info('❌ STORE UPDATES: Error at Hook layer', createLogContext({
+          correlationId,
+          layer: 'react_hook',
+          operation: 'fetch_error_hook',
+          hookName: 'useStoreUpdatesHybrid',
+          duration: Math.round(duration),
+          errorType: typeof error,
+          hasResponseBody: !!(error as any)?.responseBody
+        }));
+        
+        // STEP 6: Legacy log for compatibility (will be removed in Step 9)
         logger.error('TanStack Query fetch failed with expandable details', error instanceof Error ? error : undefined, createLogContext({
           pattern: '2C-dynamic-data',
           duration: Math.round(duration),
@@ -253,6 +329,16 @@ export const useStoreUpdatesServerState = () => {
         }));
 
         logger.error('🔍 HYBRID: API Error with expandable details', error instanceof Error ? error : new Error(String(error)));
+        
+        // STEP 6: Final error logging with correlation
+        logger.info('💥 STORE UPDATES: Final error handling at Hook layer', createLogContext({
+          correlationId,
+          layer: 'react_hook',
+          operation: 'final_error_handling',
+          hookName: 'useStoreUpdatesHybrid',
+          duration: Math.round(duration)
+        }));
+        
         throw error;
       }
     },
@@ -266,6 +352,30 @@ export const useStoreUpdatesServerState = () => {
     retryDelay: 1000,
     // Enable background refetching for stale-while-revalidate behavior
     refetchOnMount: true,
+    
+    // NEW: Basic error logging in TanStack Query (detailed handling in component)
+    onError: (error: any) => {
+      const correlationId = `query_error_${nanoid(10)}`;
+      
+      logger.info('❌ STORE UPDATES: TanStack Query Error Handler', createLogContext({
+        correlationId,
+        layer: 'tanstack_query',
+        operation: 'query_error_handler',
+        hookName: 'useStoreUpdatesHybrid',
+        errorType: typeof error,
+        hasResponseBody: !!error.responseBody,
+        queryKey: storeUpdatesQueryKeys.lists()
+      }));
+      
+      // Log error for correlation tracking - detailed handling happens at component level
+      logger.info('💥 STORE UPDATES: TanStack Query error logged', createLogContext({
+        correlationId,
+        layer: 'tanstack_query',
+        operation: 'error_logged',
+        hookName: 'useStoreUpdatesHybrid',
+        errorMessage: error.message || 'Unknown error'
+      }));
+    }
   });
 };
 
@@ -282,6 +392,9 @@ export const useStoreUpdatesServerState = () => {
  */
 export const useStoreUpdatesHybrid = () => {
   const queryClient = useQueryClient();
+  
+  // NEW: Enhanced error handling with API error modal
+  const { showHttpError, showAuthError, showServerError, showNetworkError, modalOpened, modalError, closeModal } = useApiErrorModal();
   
   // Pattern 2A: Immediate data (zero loading states)
   const userContext = useEnhancedUserContext();
@@ -307,6 +420,70 @@ export const useStoreUpdatesHybrid = () => {
   const setImmediateStats = useStoreUpdatesStore(state => state.actions.setImmediateStats);
   const updateCalculatedStats = useStoreUpdatesStore(state => state.actions.updateCalculatedStats);
   const refreshHybridStats = useStoreUpdatesStore(state => state.actions.refreshHybridStats);
+
+  // NEW: Enhanced error handler for TanStack Query errors with API modal integration
+  const handleApiError = useCallback((error: any, operation: string = 'unknown') => {
+    const correlationId = `error_handler_${nanoid(10)}`;
+    
+    logger.info('🚨 STORE UPDATES: Processing API error', createLogContext({
+      correlationId,
+      operation,
+      layer: 'react_hook',
+      hookName: 'useStoreUpdatesHybrid',
+      errorType: typeof error
+    }));
+
+    // FIXED: Extract original ApiError from TanStack Query wrapper (same pattern as useInstallUpdates)
+    let originalError = error;
+    
+    if (error.cause && typeof error.cause === 'object') {
+      originalError = error.cause;
+    } else if (error.originalError && typeof error.originalError === 'object') {
+      originalError = error.originalError;
+    } else if (error.request && error.request.error) {
+      originalError = error.request.error;
+    }
+
+    // Enhanced error handling with proper context
+    let errorTitle = 'Store Updates Load Failed';
+    let errorMessage = 'Failed to load store updates data';
+    let httpStatus: string | undefined;
+    let statusMessage: string | undefined;
+    
+    if (originalError.responseBody) {
+      errorMessage = originalError.responseBody.message || originalError.message || errorMessage;
+      httpStatus = String(originalError.responseBody.http_status || originalError.httpStatus || '');
+      statusMessage = originalError.responseBody.status_message || originalError.statusMessage || '';
+    } else if (originalError.httpStatus) {
+      httpStatus = String(originalError.httpStatus);
+      statusMessage = originalError.statusMessage || '';
+      errorMessage = originalError.message || errorMessage;
+    } else {
+      errorMessage = originalError.message || error.message || errorMessage;
+    }
+
+    // Display appropriate error modal
+    if (httpStatus === '401') {
+      showAuthError(errorMessage, undefined, originalError.errorSource, originalError.credentialObject);
+    } else if (httpStatus === '403') {
+      showHttpError('Permission Error', errorMessage, httpStatus, statusMessage, undefined, originalError.errorSource, originalError.credentialObject);
+    } else if (httpStatus === '404') {
+      showHttpError('Store Updates Service Not Found', errorMessage, httpStatus, statusMessage);
+    } else if (httpStatus === '500') {
+      showServerError(errorMessage);
+    } else if (error.message && error.message.includes('Failed to fetch')) {
+      showNetworkError('Network connection failed. Please check your connection and try again.');
+    } else {
+      showHttpError(errorTitle, errorMessage, httpStatus, statusMessage);
+    }
+
+    logger.info('🚨 STORE UPDATES: Error modal displayed', createLogContext({
+      correlationId,
+      operation,
+      errorMessage: errorMessage.substring(0, 50) + '...',
+      httpStatus
+    }));
+  }, [showAuthError, showHttpError, showServerError, showNetworkError]);
 
   // FIXED: Stable references to prevent infinite loops
   const userFirstName = userContext.firstName;
@@ -349,8 +526,38 @@ export const useStoreUpdatesHybrid = () => {
     }
   }, [serverQuery.data]); // FIXED: Only depend on server data, not totalRecords
 
+  // NEW: Handle server query errors with enhanced error modal
+  React.useEffect(() => {
+    if (serverQuery.isError && serverQuery.error) {
+      logger.info('Server query error detected, showing enhanced error modal', createLogContext({
+        pattern: 'server-query-error',
+        errorMessage: serverQuery.error.message,
+        hookName: 'useStoreUpdatesHybrid'
+      }));
+      
+      handleApiError(serverQuery.error, 'server-query-error');
+    }
+  }, [serverQuery.isError, serverQuery.error, handleApiError]);
+
   // STALE-WHILE-REVALIDATE: Enhanced refresh function that keeps existing data visible
   const refresh = useCallback(async () => {
+    // ACTION 01B: Generate professional correlation ID for refresh operations
+    const correlationId = `refresh_${nanoid(10)}`;
+    
+    // STEP 6: Enhanced refresh logging with correlation
+    logger.info('🔄 STORE UPDATES: Manual refresh at Hook layer', createLogContext({
+      correlationId,
+      pattern: 'stale-while-revalidate-refresh',
+      currentCacheStatus: serverQuery.isStale ? 'stale' : 'fresh',
+      userContext: userFirstName,
+      hasExistingData: paginatedRecords.length > 0,
+      refreshStrategy: 'keep-stale-data-visible',
+      layer: 'react_hook',
+      operation: 'refresh_start',
+      hookName: 'useStoreUpdatesHybrid'
+    }));
+    
+    // STEP 6: Legacy log for compatibility (will be removed in Step 9)
     logger.info('Manual refresh requested (Stale-While-Revalidate Pattern)', createLogContext({
       pattern: 'stale-while-revalidate-refresh',
       currentCacheStatus: serverQuery.isStale ? 'stale' : 'fresh',
@@ -371,6 +578,18 @@ export const useStoreUpdatesHybrid = () => {
       // Trigger background refetch - existing data stays visible during fetch
       await serverQuery.refetch();
       
+      // STEP 6: Enhanced success logging with correlation
+      logger.info('✅ STORE UPDATES: Refresh successful at Hook layer', createLogContext({
+        correlationId,
+        pattern: 'stale-while-revalidate-success',
+        refreshStrategy: 'background-refetch',
+        dataKeptVisible: true,
+        layer: 'react_hook',
+        operation: 'refresh_success',
+        hookName: 'useStoreUpdatesHybrid'
+      }));
+      
+      // STEP 6: Legacy log for compatibility (will be removed in Step 9)
       logger.info('Stale-while-revalidate refresh completed', createLogContext({
         pattern: 'stale-while-revalidate-success',
         refreshStrategy: 'background-refetch',
@@ -378,6 +597,18 @@ export const useStoreUpdatesHybrid = () => {
       }));
       
     } catch (error) {
+      // STEP 6: Enhanced error logging with correlation
+      logger.info('❌ STORE UPDATES: Refresh error at Hook layer', createLogContext({
+        correlationId,
+        pattern: 'stale-while-revalidate-error',
+        refreshStrategy: 'background-refetch',
+        layer: 'react_hook',
+        operation: 'refresh_error',
+        hookName: 'useStoreUpdatesHybrid',
+        errorType: typeof error
+      }));
+      
+      // STEP 6: Legacy log for compatibility (will be removed in Step 9)
       logger.error('Stale-while-revalidate refresh failed', 
         error instanceof Error ? error : new Error(String(error)), 
         createLogContext({
@@ -443,6 +674,13 @@ export const useStoreUpdatesHybrid = () => {
       refreshHybridStats,
       updateCalculatedStats,
       setImmediateStats
+    },
+    
+    // NEW: API Error Modal state (expose modal state for rendering)
+    apiErrorModal: {
+      opened: modalOpened,
+      error: modalError,
+      onClose: closeModal
     },
     
     // Hybrid pattern status (Architecture.md compliance)

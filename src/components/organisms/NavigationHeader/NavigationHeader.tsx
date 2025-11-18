@@ -25,9 +25,9 @@ import {
   IconExternalLink
 } from '@tabler/icons-react';
 import { showNotification } from '@mantine/notifications';
-import { ColorSchemeToggle } from '../theme/ColorSchemeToggle';
-import { logger, createLogContext } from '../../monitoring/logger';
-import { useEnhancedUserContext } from '../../hooks/useUserContext';
+import { ColorSchemeToggle } from '../../theme/ColorSchemeToggle';
+import { logger, createLogContext } from '../../../lib/logging/logger';
+import { useEnhancedUserContext } from '../../../hooks/useUserContext';
 
 // Check if debug mode is enabled
 const isDebugMode = () => {

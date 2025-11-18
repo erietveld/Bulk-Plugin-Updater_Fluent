@@ -4,8 +4,8 @@
 // Uses existing API service following established patterns
 
 import { useState, useEffect, useCallback } from 'react';
-import { apiService } from '../api/apiService';
-import { logger, createLogContext } from '../monitoring/logger';
+import { apiService } from '../lib/api/apiService';
+import { logger, createLogContext } from '../lib/logging/logger';
 
 // Types for validation response
 interface ValidationResponse {

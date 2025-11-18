@@ -4,8 +4,10 @@
 // DEBUG: Added logging to getTableRecords method
 // INSTALL UPDATES: Added installUpdates method for batch operations
 
-import { logger, createLogContext } from '../monitoring/logger';
-import { debugService } from '../services/debugService'; // NEW: For debug-only logging
+import { logger, createLogContext } from '../logging/logger';
+import { debugService } from '../../services/debugService'; // NEW: For debug-only logging
+import { nanoid } from 'nanoid';
+import { executeServiceNowRequest, ServiceNowClientConfig } from './servicenowClient'; // NEW: Enhanced transport layer
 import type {
   ServiceNowRecord,
   ApiResponse,
@@ -14,8 +16,10 @@ import type {
   ApiError,
   PerformanceMetrics,
   RequestInterceptor
-} from '../types/api';
-import { createApiRequestConfig, createPerformanceMetrics, createRequestInterceptor } from '../types/api';
+} from '../../types/api';
+import { createApiRequestConfig, createPerformanceMetrics, createRequestInterceptor } from '../../types/api';
+
+// STEP 4: Response processing imports removed - using 3rd party libraries instead
 
 // Install Updates API types
 interface InstallUpdatesRequest {
@@ -26,7 +30,7 @@ interface InstallUpdatesResponse {
   success: boolean;
   progress_id: string;
   status_message: string;
-  http_status: string; // NEW: HTTP status from CICD API
+  http_status: number; // NEW: HTTP status from CICD API
   app_count: number;
   apps_requested: string;
   timestamp: string;
@@ -36,7 +40,7 @@ interface InstallUpdatesErrorResponse {
   success: false;
   error: string;
   message: string;
-  http_status?: string; // NEW: HTTP status from failed API call
+  http_status?: number; // NEW: HTTP status from failed API call
   status_message?: string; // NEW: Additional status info
   timestamp: string;
 }
@@ -46,15 +50,39 @@ interface InternalRequestConfig extends ApiRequestConfig {
 }
 
 class ServiceNowApiService {
+  private static instance: ServiceNowApiService;
   private baseUrl: string;
   private interceptors: RequestInterceptor[] = [];
   private performanceMetrics: PerformanceMetrics[] = [];
   private readonly slowRequestThreshold = 2000; // 2 seconds
 
-  constructor() {
+  // Cleaned up: Removed over-engineered ResponseProcessor system
+  // Using 3rd party libraries for error handling instead
+
+  private constructor() {
     // ServiceNow instance base URL - will be set dynamically
     this.baseUrl = this.getServiceNowBaseUrl();
     this.setupDefaultInterceptors();
+
+    // Cleaned up: ResponseProcessor initialization removed
+    // Will implement 3rd party libraries in next step
+  }
+
+  /**
+   * Get the singleton instance - TRUE SINGLETON PATTERN
+   */
+  public static getInstance(): ServiceNowApiService {
+    if (!ServiceNowApiService.instance) {
+      ServiceNowApiService.instance = new ServiceNowApiService();
+      
+      if (debugService.isDebugMode()) {
+        logger.info('🏗️ ServiceNow API Service singleton created', createLogContext({
+          timestamp: new Date().toISOString(),
+          instanceId: 'singleton'
+        }));
+      }
+    }
+    return ServiceNowApiService.instance;
   }
 
   private getServiceNowBaseUrl(): string {
@@ -93,10 +121,19 @@ class ServiceNowApiService {
         return { ...config, headers };
       },
       onResponse: (response) => {
-        logger.info('API Response received', createLogContext({
-          hasResult: !!response.result,
-          hasError: !!response.error
-        }));
+        // DEBUG: Enhanced response logging with payload (only in debug mode)
+        if (debugService.isDebugMode()) {
+          logger.info('🔍 API Response received', createLogContext({
+            hasResult: !!response.result,
+            hasError: !!response.error,
+            responsePayload: response // NEW: Include full response payload in debug
+          }));
+        } else {
+          logger.info('API Response received', createLogContext({
+            hasResult: !!response.result,
+            hasError: !!response.error
+          }));
+        }
         return response;
       },
       onError: (error) => {
@@ -121,7 +158,7 @@ class ServiceNowApiService {
   }
 
   private generateRequestId(): string {
-    return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `req_${nanoid(10)}`;
   }
 
   /**
@@ -191,6 +228,10 @@ class ServiceNowApiService {
     let lastError: ApiError | null = null;
     let retryCount = 0;
 
+    // Cleaned up: Removed parallel testing logic
+    // Will implement smart error handler in next step
+
+    // ORIGINAL LOGIC (when parallel testing disabled or failed)
     // Retry logic with exponential backoff
     while (retryCount <= requestConfig.retries) {
       try {
@@ -287,58 +328,58 @@ class ServiceNowApiService {
   private async executeRequest<T>(config: InternalRequestConfig): Promise<ApiResponse<T>> {
     const { url, method, data, headers, timeout } = config;
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-
     try {
-      const fetchOptions: RequestInit = {
+      // ENHANCED: Use servicenowClient transport layer instead of native fetch
+      // Preserves all existing functionality while adding ServiceNow nested error detection
+      const transportConfig: ServiceNowClientConfig = {
         method,
-        signal: controller.signal,
+        url,
+        data,
+        headers,
+        timeout
       };
 
-      // Only add headers if they exist
-      if (headers) {
-        fetchOptions.headers = headers;
-      }
-
-      if (data && ['POST', 'PUT', 'PATCH'].includes(method)) {
-        fetchOptions.body = JSON.stringify(data);
-      }
-
-      const response = await fetch(url, fetchOptions);
-      clearTimeout(timeoutId);
-
-      // FIXED: Always try to parse response body for structured errors
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        // FIXED: Check if response body contains structured error information
-        if (responseData && responseData.result && responseData.result.success === false) {
-          const errorResult = responseData.result;
-          
-          // Create enhanced error with response body details
-          const enhancedError = new Error(`${errorResult.message || `HTTP ${response.status}: ${response.statusText}`}`) as any;
-          enhancedError.responseBody = errorResult;
-          enhancedError.httpStatus = errorResult.http_status;
-          enhancedError.statusMessage = errorResult.status_message;
-          enhancedError.errorCode = errorResult.error;
-          enhancedError.isFromResponseBody = true;
-          enhancedError.originalHttpStatus = response.status;
-          
-          throw enhancedError;
-        }
-        
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+      const responseData = await executeServiceNowRequest<T>(transportConfig);
       
-      // ServiceNow API response format
+      // ServiceNow API response format (preserved from original implementation)
       return {
         result: responseData.result || responseData,
         status: 'success'
       };
 
     } catch (error) {
-      clearTimeout(timeoutId);
+      // Enhanced error handling - preserved original logic with transport layer enhancements
+      if (error && typeof error === 'object') {
+        // Check if this is a ServiceNow nested error from transport layer
+        if ((error as any).isServiceNowNested) {
+          // FIXED: Preserve ALL properties from the enhanced ApiError, not just selected ones
+          const enhancedError = new Error((error as any).message) as any;
+          
+          // Copy all enumerable properties from the original error
+          for (const key in error) {
+            if (error.hasOwnProperty(key) && key !== 'message' && key !== 'name' && key !== 'stack') {
+              enhancedError[key] = (error as any)[key];
+            }
+          }
+          
+          // Ensure critical ServiceNow nested error properties are preserved
+          enhancedError.responseBody = (error as any).responseBody;
+          enhancedError.httpStatus = (error as any).status;
+          enhancedError.statusMessage = (error as any).responseBody?.status_message;
+          enhancedError.errorCode = (error as any).responseBody?.error;
+          enhancedError.isFromResponseBody = true;
+          enhancedError.correlationId = (error as any).correlationId;
+          enhancedError.shouldStopPolling = (error as any).shouldStopPolling;
+          enhancedError.originalHttpStatus = 200; // ServiceNow nested errors come via HTTP 200
+          
+          // CRITICAL: Ensure errorSource and credentialObject are preserved
+          enhancedError.errorSource = (error as any).errorSource;
+          enhancedError.credentialObject = (error as any).credentialObject;
+          
+          throw enhancedError;
+        }
+      }
+      
       throw error;
     }
   }
@@ -349,6 +390,14 @@ class ServiceNowApiService {
     apiError.code = error.code || 'UNKNOWN_ERROR';
     apiError.status = error.status || 0;
     apiError.timestamp = new Date().toISOString();
+
+    // ENHANCED: Copy ALL properties from the original error to preserve enhanced error context
+    // This ensures any enhanced properties (like errorSource, credentialObject) are preserved
+    for (const key in error) {
+      if (error.hasOwnProperty(key) && key !== 'message' && key !== 'name' && key !== 'stack') {
+        (apiError as any)[key] = error[key];
+      }
+    }
 
     // Create immutable copies for the readonly properties
     const requestCopy = {
@@ -414,66 +463,7 @@ class ServiceNowApiService {
     return this.performRequest<T>(url, { ...config, method: 'DELETE' });
   }
 
-  // ServiceNow-specific methods - ENHANCED WITH DEBUG LOGGING
-
-  public async getTableRecords<T extends ServiceNowRecord = ServiceNowRecord>(
-    table: string,
-    query?: string,
-    fields?: string[],
-    limit?: number,
-    offset?: number
-  ): Promise<ApiListResponse<T>> {
-    // DEBUG: Log exactly what parameters we received (only in debug mode)
-    if (debugService.isDebugMode()) {
-      logger.info('🔍 getTableRecords called', createLogContext({
-        table,
-        query,
-        fields,
-        fieldsLength: fields?.length,
-        limit,
-        offset
-      }));
-    }
-
-    const params: Record<string, string | number> = {};
-    
-    if (query) params.sysparm_query = query;
-    if (fields?.length) {
-      params.sysparm_fields = fields.join(',');
-      
-      // DEBUG: Log the fields processing (only in debug mode)
-      if (debugService.isDebugMode()) {
-        logger.info('🔍 Fields processing', createLogContext({
-          originalFields: fields,
-          joinedFields: fields.join(','),
-          hasDotWalkFields: fields.some(f => f.includes('.')),
-          dotWalkFields: fields.filter(f => f.includes('.'))
-        }));
-      }
-    }
-    if (limit) params.sysparm_limit = limit;
-    if (offset) params.sysparm_offset = offset;
-
-    // DEBUG: Log final params object (only in debug mode)
-    if (debugService.isDebugMode()) {
-      logger.info('🔍 Final params object', createLogContext({
-        table,
-        params,
-        paramCount: Object.keys(params).length
-      }));
-    }
-
-    // Now use the generic params handling instead of manual URL building
-    const response = await this.get<T[]>(`/api/now/table/${table}`, { params });
-    
-    return {
-      result: response.result || [],
-      total: 0,
-      count: (response.result || []).length,
-      offset: offset || 0,
-      limit: limit || 100
-    };
-  }
+  // ServiceNow-specific methods
 
   public async getRecord<T extends ServiceNowRecord = ServiceNowRecord>(
     table: string,
@@ -508,13 +498,21 @@ class ServiceNowApiService {
     return this.delete(url);
   }
 
-  // INSTALL UPDATES: ServiceNow Store Updates specific method
+  // STEP 6: INSTALL UPDATES - Cleaned up, removing centralized processor
   public async installUpdates(apps: string[]): Promise<InstallUpdatesResponse> {
     const startTime = performance.now();
     
-    logger.info('Installing updates via service layer', createLogContext({
+    // Generate correlation ID for cross-layer tracking
+    const correlationId = `install_${nanoid(10)}`;
+    
+    // Source logging - API Service layer
+    logger.info('🚀 INSTALL UPDATES: Starting at API Service layer', createLogContext({
+      correlationId,
       appCount: apps.length,
-      apps: apps.join(',')
+      apps: apps.slice(0, 3).join(',') + (apps.length > 3 ? '...' : ''), // Log first 3 IDs
+      layer: 'api_service',
+      operation: 'install_updates_start',
+      debugMode: debugService.isDebugMode()
     }));
 
     try {
@@ -522,50 +520,21 @@ class ServiceNowApiService {
         apps: apps.join(',')
       };
 
-      // FIXED: Disable retries for install updates to prevent multiple API calls
+      // Execute API call - will implement smart error handler in next step
       const response = await this.post<InstallUpdatesResponse | InstallUpdatesErrorResponse>(
         `/api/x_snc_store_upda_1/install_updates`,
         requestData,
         { retries: 0 } // No retries on any error
       );
 
-      const result = response.result;
-      
-      if (!result.success) {
-        const errorResult = result as InstallUpdatesErrorResponse;
-        
-        // FIXED: Create enhanced error with response body details and proper logging
-        logger.info('Install Updates API returned success:false - creating enhanced error', createLogContext({
-          errorCode: errorResult.error,
-          httpStatus: errorResult.http_status,
-          statusMessage: errorResult.status_message,
-          message: errorResult.message,
-          timestamp: errorResult.timestamp
-        }));
-        
-        const enhancedError = new Error(`Install Updates API error: ${errorResult.message}`) as any;
-        enhancedError.responseBody = errorResult;
-        enhancedError.httpStatus = String(errorResult.http_status); // Ensure string type
-        enhancedError.statusMessage = errorResult.status_message || '';
-        enhancedError.errorCode = errorResult.error;
-        enhancedError.isFromResponseBody = true;
-        
-        logger.info('Enhanced error created with properties', createLogContext({
-          errorMessage: enhancedError.message,
-          hasResponseBody: !!enhancedError.responseBody,
-          httpStatus: enhancedError.httpStatus,
-          statusMessage: enhancedError.statusMessage,
-          errorCode: enhancedError.errorCode,
-          isFromResponseBody: enhancedError.isFromResponseBody
-        }));
-        
-        throw enhancedError;
-      }
-
-      const successResult = result as InstallUpdatesResponse;
+      const successResult = response.result as InstallUpdatesResponse;
       const duration = performance.now() - startTime;
 
-      logger.info('Install updates completed successfully', createLogContext({
+      // Enhanced success logging
+      logger.info('✅ INSTALL UPDATES: Completed successfully', createLogContext({
+        correlationId,
+        layer: 'api_service',
+        operation: 'install_success',
         progressId: successResult.progress_id,
         appCount: successResult.app_count,
         statusMessage: successResult.status_message,
@@ -577,8 +546,19 @@ class ServiceNowApiService {
     } catch (error) {
       const duration = performance.now() - startTime;
       
-      // FIXED: Remove duplicate logging - API interceptor already logs the error
-      // Just re-throw to let upper layers handle it
+      logger.info('❌ INSTALL UPDATES: Error occurred', createLogContext({
+        correlationId,
+        layer: 'api_service',
+        operation: 'install_error',
+        duration: Math.round(duration),
+        errorType: typeof error
+      }));
+      
+      // Add correlation ID to error if not already present
+      if (error && typeof error === 'object' && !(error as any).correlationId) {
+        (error as any).correlationId = correlationId;
+      }
+      
       throw error;
     }
   }
@@ -630,6 +610,9 @@ class ServiceNowApiService {
   }
 }
 
-// Export singleton instance
-export const apiService = new ServiceNowApiService();
+// TRUE SINGLETON PATTERN - Prevents multiple instances
+export const apiService = ServiceNowApiService.getInstance();
 export default apiService;
+
+// Export the class for type checking only (constructor is private)
+export { ServiceNowApiService };

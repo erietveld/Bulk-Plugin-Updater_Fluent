@@ -55,12 +55,12 @@ import {
 import type { StoreUpdate } from '../../../hooks/useStoreUpdatesHybrid';
 import type { useStoreUpdatesFiltering, useStoreUpdatesPagination } from '../../../hooks/useStoreUpdatesHybrid';
 import type { useStoreUpdatesSelection } from '../../../hooks/useStoreUpdatesSelection';
-import { logger, createLogContext } from '../../../monitoring/logger';
+import { logger, createLogContext } from '../../../lib/logging/logger';
 import { useThemeManagement } from '../../../hooks/useThemeManagement';
 
 // Import generic components
-import { GenericTable } from '../../../components/mantine/Table';
-import { GenericButton } from '../../../components/mantine/Button';
+import { GenericTable } from '../Table/Table';
+import { GenericButton } from '../../atoms/Button/Button';
 
 interface StoreUpdatesDataGridProps {
   filteringHook: ReturnType<typeof useStoreUpdatesFiltering>;

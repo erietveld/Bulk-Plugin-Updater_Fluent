@@ -1,7 +1,9 @@
 // src/types/api.ts  
 // COMPLIANCE: Step 3 - Fixed TypeScript definitions with refined types and nullish coalescing
 // Enhanced type definitions for ServiceNow API integration with better type safety
+// ACTION 01B: Added zod schema validation for ServiceNow API responses
 
+import { z } from 'zod';
 import { getString, getNumber, getBoolean, getSysId, getServiceNowDateTime, type NonUndefined } from '../utils/typeRefinements';
 
 // Base ServiceNow record with refined types - no undefined in required fields
@@ -13,6 +15,44 @@ export interface ServiceNowRecord {
   readonly sys_updated_by: string; // Required, never undefined
   readonly [key: string]: unknown; // Allow additional properties
 }
+
+// ACTION 01B: Add zod schema for StoreUpdate validation (updated to match ServiceNow API format)
+export const StoreUpdateSchema = z.object({
+  sys_id: z.string(),
+  name: z.string(),
+  level: z.enum(['major', 'minor', 'patch']),
+  batch_level: z.enum(['major', 'minor', 'patch']),
+  installed_version: z.string(),
+  latest_version_level: z.enum(['major', 'minor', 'patch']),
+  // ServiceNow returns count fields as strings, not numbers
+  major_count: z.string().transform(val => parseInt(val, 10) || 0),
+  minor_count: z.string().transform(val => parseInt(val, 10) || 0),
+  patch_count: z.string().transform(val => parseInt(val, 10) || 0),
+  // Optional application fields (dot-walked from sys_store_app)
+  application_name: z.string().optional(),
+  application_install_date: z.string().optional(),
+  application_short_description: z.string().optional(),
+  application_version: z.string().optional(),
+  // Optional available_version fields (dot-walked from sys_app_version)
+  available_version_publish_date: z.string().optional(),
+  available_version_short_description: z.string().optional(),
+  available_version_version: z.string().optional(),
+  available_version_source_app_id: z.string().optional(),
+  // ServiceNow system fields are not included in this API response, making them optional
+  sys_created_on: z.string().optional(),
+  sys_created_by: z.string().optional(),
+  sys_updated_on: z.string().optional(),
+  sys_updated_by: z.string().optional(),
+  // Allow additional properties from ServiceNow
+}).passthrough();
+
+// ACTION 01B: Add zod schema for API list response validation
+export const StoreUpdateApiResponseSchema = z.object({
+  result: z.array(StoreUpdateSchema)
+});
+
+// Export the inferred TypeScript type for use in hooks
+export type StoreUpdateValidated = z.infer<typeof StoreUpdateSchema>;
 
 // Separate error details interface for better type safety
 export interface ApiErrorDetails {

@@ -27,8 +27,8 @@ import {
   IconCopy,
   IconExternalLink
 } from '@tabler/icons-react';
-import type { ApiErrorDetails } from '../../../hooks/useApiErrorModal';
-import { logger, createLogContext } from '../../../monitoring/logger';
+import type { ApiErrorDetails } from '../../hooks/useApiErrorModal';
+import { logger, createLogContext } from '../../lib/logging/logger';
 
 interface ApiErrorModalProps {
   opened: boolean;
@@ -41,6 +41,17 @@ export const ApiErrorModal: React.FC<ApiErrorModalProps> = ({ opened, error, onC
   const isDark = colorScheme === 'dark';
 
   if (!error) return null;
+
+  // DEBUG: Log modal render with error details
+  logger.info('🔧 DEBUG: ApiErrorModal rendering', createLogContext({
+    opened,
+    errorType: error.errorType,
+    title: error.title,
+    httpStatus: error.httpStatus,
+    hasActions: !!error.actions,
+    actionsCount: error.actions?.length || 0,
+    actionLabels: error.actions?.map(a => a.label) || []
+  }));
 
   // Get error icon based on type
   const getErrorIcon = () => {
@@ -125,7 +136,7 @@ export const ApiErrorModal: React.FC<ApiErrorModalProps> = ({ opened, error, onC
         ];
       case 'http':
         return [
-          'Review the error details below',
+          'Review the error details',
           'Check ServiceNow logs for additional information',
           'Verify the service configuration and endpoints',
           'Contact your system administrator if the issue continues'

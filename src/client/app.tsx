@@ -14,7 +14,7 @@ import { useThemeManagement } from '../hooks/useThemeManagement';
 import { usePerformanceTracking } from '../hooks/usePerformanceTracking';
 import { createEnhancedColorSchemeManager } from '../theme/management/colorScheme';
 import { cssVariablesResolver } from '../theme/management/cache';
-import { logger, createLogContext } from '../monitoring/logger';
+import { logger, createLogContext } from '../lib/logging/logger';
 
 // Import lazy components and loading fallback
 import {
@@ -31,7 +31,7 @@ import {
 import { 
   AppErrorBoundary, 
   FeatureErrorBoundary 
-} from '../error/ErrorBoundary';
+} from '../components/error/ErrorBoundary';
 
 // Import validation hook
 import useValidationStatus from '../hooks/useValidationStatus';

@@ -5,7 +5,7 @@
 // Following ServiceNow-Optimized Data Architecture (Hybrid Pattern)
 
 import { useMemo } from 'react';
-import { logger, createLogContext } from '../monitoring/logger';
+import { logger, createLogContext } from '../lib/logging/logger';
 import { 
   getString, 
   getBoolean, 

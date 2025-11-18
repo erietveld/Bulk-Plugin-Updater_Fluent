@@ -1,6 +1,9 @@
 // src/monitoring/logger.ts
-// Advanced logging system following Architecture.md specifications
+// Advanced logging system with loglevel integration for ServiceNow compatibility
+// Enhanced with performance optimization and automatic log level management
 // FIXED: Updated to check correct Pattern 2A data variables and error handling
+
+import log from 'loglevel';
 
 interface LogContext {
   [key: string]: any;
@@ -28,6 +31,35 @@ interface Logger {
 
 class EnterpriseLogger implements Logger {
   
+  constructor() {
+    // Initialize loglevel integration with ServiceNow URL parameter detection
+    this.updateLogLevel();
+    
+    // Update log level when URL changes (ServiceNow SPA routing)
+    if (typeof window !== 'undefined') {
+      window.addEventListener('popstate', () => this.updateLogLevel());
+      
+      // Check periodically for programmatic URL changes in ServiceNow
+      setInterval(() => this.updateLogLevel(), 5000);
+    }
+  }
+
+  /**
+   * Update loglevel based on ServiceNow URL parameter detection
+   */
+  private updateLogLevel(): void {
+    const isDebug = this.isDebugEnabled();
+    const currentLevel = log.getLevel();
+    const targetLevel = isDebug ? log.levels.DEBUG : log.levels.ERROR;
+    
+    if (currentLevel !== targetLevel) {
+      log.setLevel(targetLevel);
+      if (isDebug) {
+        log.debug('🐛 Enhanced logger debug mode enabled via sn_debug=true');
+      }
+    }
+  }
+
   private formatMessage(level: string, message: string, context?: LogContext): string {
     const timestamp = new Date().toISOString();
     return `[${timestamp}] [${level.toUpperCase()}] ${message}${context ? ` | Context: ${JSON.stringify(context, null, 2)}` : ''}`;
@@ -71,6 +103,7 @@ class EnterpriseLogger implements Logger {
 
   /**
    * Check if debug logging is enabled via URL parameter sn_debug=true
+   * Enhanced with loglevel integration for performance
    */
   isDebugEnabled(): boolean {
     if (typeof window === 'undefined') return false;
@@ -78,19 +111,31 @@ class EnterpriseLogger implements Logger {
     return urlParams.get('sn_debug') === 'true';
   }
 
+  /**
+   * Info logging with performance optimization
+   * Only processes when debug enabled (sn_debug=true)
+   */
   info(message: string, context?: LogContext): void {
-    if (this.isDebugEnabled()) {
+    // Performance guard: Only process when loglevel allows
+    if (log.getLevel() <= log.levels.INFO) {
       this.logToConsole('info', message, context);
     }
     this.sendToServiceNow('info', message, undefined, context);
   }
 
+  /**
+   * Warning logging - always visible (production + debug)
+   */
   warn(message: string, context?: LogContext): void {
+    // Warnings always visible (ERROR level and above)
     this.logToConsole('warn', message, context);
     this.sendToServiceNow('warn', message, undefined, context);
   }
 
-  // FIXED: Better error method signature handling
+  /**
+   * Error logging - always visible (production + debug)
+   * FIXED: Better error method signature handling
+   */
   error(message: string, errorOrContext?: Error | LogContext, context?: LogContext): void {
     let actualError: Error | undefined;
     let actualContext: LogContext | undefined;
@@ -104,19 +149,25 @@ class EnterpriseLogger implements Logger {
       actualContext = errorOrContext;
     }
 
+    // Errors always visible (ERROR level and above)
     this.logToConsole('error', message, actualContext, actualError);
     this.sendToServiceNow('error', message, actualError, actualContext);
   }
 
   /**
-   * Debug logging - only outputs when sn_debug=true URL parameter is present
+   * Debug logging with loglevel performance optimization
+   * Zero overhead when sn_debug=false
    */
   debug(message: string, context?: LogContext): void {
-    if (this.isDebugEnabled()) {
+    // Performance guard: Only process when loglevel allows (DEBUG level)
+    if (log.getLevel() <= log.levels.DEBUG) {
       this.logToConsole('debug', message, context);
     }
   }
 
+  /**
+   * Track user actions with performance optimization
+   */
   trackUserAction(action: string, context?: LogContext): void {
     const actionContext = {
       ...context,
@@ -126,6 +177,7 @@ class EnterpriseLogger implements Logger {
       url: window.location.href
     };
     
+    // Use performance-optimized info logging
     this.info(`User action: ${action}`, actionContext);
   }
 }
@@ -150,4 +202,27 @@ export const createLogContext = (additionalContext?: LogContext): LogContext => 
 // Utility function for conditional debug logging
 export const debugLog = (message: string, context?: LogContext) => {
   logger.debug(message, context);
+};
+
+/**
+ * Performance-optimized debug logging with expensive context builder
+ * Only executes context builder when debug is enabled (sn_debug=true)
+ * Based on logging-performance-optimization.md patterns
+ */
+export const debugLogWithContext = (message: string, expensiveContextBuilder: () => LogContext) => {
+  // Performance guard: Only execute expensive operations when debug enabled
+  if (log.getLevel() <= log.levels.DEBUG) {
+    logger.debug(message, expensiveContextBuilder());
+  }
+};
+
+/**
+ * Performance-optimized info logging with expensive context builder
+ * Only executes context builder when info logging is enabled (sn_debug=true)
+ */
+export const infoLogWithContext = (message: string, expensiveContextBuilder: () => LogContext) => {
+  // Performance guard: Only execute expensive operations when info enabled
+  if (log.getLevel() <= log.levels.INFO) {
+    logger.info(message, expensiveContextBuilder());
+  }
 };

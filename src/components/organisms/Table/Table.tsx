@@ -30,7 +30,7 @@ import {
   IconAlertCircle,
   IconTable
 } from '@tabler/icons-react';
-import { logger } from '../../monitoring/logger';
+import { logger } from '../../../lib/logging/logger.js';
 
 // Base interfaces for table functionality
 export interface TableColumn<T = any> {

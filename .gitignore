@@ -2,6 +2,9 @@
 .now/
 dist/
 sndocs/
+MIGRATION_ARCHIVE/
+Log.md
+CENTRALIZED_ERROR_HANDLING_MIGRATION_PLAN.md
 node_modules/
 target/
 *.tsbuildinfo

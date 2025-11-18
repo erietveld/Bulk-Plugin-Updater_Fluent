@@ -229,6 +229,88 @@ export const isValidObject = (value: unknown): value is Record<string, any> => {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 };
 
+// Enhanced type guards for API error handling
+export interface ApiError extends Error {
+  httpStatus?: number | string;
+  status?: number | string;
+  statusMessage?: string;
+  responseBody?: any;
+  correlationId?: string;
+  errorSource?: string;
+  credentialObject?: string;
+  isServiceNowNested?: boolean;
+  shouldStopPolling?: boolean;
+  isFromResponseBody?: boolean;
+}
+
+export const isApiError = (value: unknown): value is ApiError => {
+  return value instanceof Error && 
+         isValidObject(value) && 
+         (typeof (value as any).httpStatus !== 'undefined' ||
+          typeof (value as any).status !== 'undefined' ||
+          typeof (value as any).responseBody !== 'undefined');
+};
+
+export const isServiceNowError = (value: unknown): value is ApiError & { isServiceNowNested: true } => {
+  return isApiError(value) && 
+         (value as any).isServiceNowNested === true;
+};
+
+export const isAuthenticationError = (value: unknown): value is ApiError => {
+  if (!isApiError(value)) return false;
+  const status = getInteger(value.httpStatus || value.status, 0);
+  return status === 401;
+};
+
+export const isPermissionError = (value: unknown): value is ApiError => {
+  if (!isApiError(value)) return false;
+  const status = getInteger(value.httpStatus || value.status, 0);
+  return status === 403;
+};
+
+export const isNotFoundError = (value: unknown): value is ApiError => {
+  if (!isApiError(value)) return false;
+  const status = getInteger(value.httpStatus || value.status, 0);
+  return status === 404;
+};
+
+export const isServerError = (value: unknown): value is ApiError => {
+  if (!isApiError(value)) return false;
+  const status = getInteger(value.httpStatus || value.status, 0);
+  return status >= 500 && status < 600;
+};
+
+// Enhanced error property extraction with type safety
+export const getErrorStatus = (error: unknown): number => {
+  if (!isApiError(error)) return 0;
+  return getInteger(error.httpStatus || error.status, 0);
+};
+
+export const getErrorMessage = (error: unknown, defaultMessage = 'Unknown error'): string => {
+  if (!isApiError(error)) return defaultMessage;
+  return getString(error.message, defaultMessage);
+};
+
+export const getErrorStatusMessage = (error: unknown): string => {
+  if (!isApiError(error)) return '';
+  return getString(error.statusMessage, '');
+};
+
+export const getErrorSource = (error: unknown): string => {
+  if (!isApiError(error)) return '';
+  return getString(error.errorSource, '');
+};
+
+export const getCredentialObject = (error: unknown): string => {
+  if (!isApiError(error)) return '';
+  return getString(error.credentialObject, '');
+};
+
+export const getCorrelationId = (error: unknown): string => {
+  if (!isApiError(error)) return '';
+  return getString(error.correlationId, '');
+};
+
 // Configuration with defaults using nullish coalescing
 export interface AppConfig {
   theme: ThemeKey;

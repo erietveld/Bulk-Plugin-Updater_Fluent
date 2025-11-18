@@ -7,7 +7,7 @@ import {
   MantineTheme,
   localStorageColorSchemeManager 
 } from '@mantine/core';
-import { logger, createLogContext } from '../../monitoring/logger';
+import { logger, createLogContext } from '../../lib/logging/logger';
 import { performanceMetrics } from './cache';
 
 // Check if debug mode is enabled
