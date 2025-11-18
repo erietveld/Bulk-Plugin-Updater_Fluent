@@ -89,6 +89,8 @@ export const useInstallUpdates = (
   
   // Progress polling ref
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const consecutiveErrorsRef = useRef<number>(0);
+  const maxConsecutiveErrors = 3; // Stop after 3 consecutive errors
 
   // Confirmation modal state
   const [confirmationModal, setConfirmationModal] = useState<ConfirmationModalState>({
@@ -189,6 +191,9 @@ export const useInstallUpdates = (
         // Update store with enhanced progress values
         batchProgressStore.updateProgress(displayProgress, displayStatusMessage);
 
+        // Reset consecutive errors on successful response
+        consecutiveErrorsRef.current = 0;
+
         // Handle completion states
         if (progressState.status_label === 'Successful' && progressState.percent_complete === 100) {
           batchProgressStore.completeOperation('Installation completed successfully');
@@ -285,8 +290,93 @@ export const useInstallUpdates = (
           createLogContext({ progressId })
         );
         
-        // Don't stop polling on single error - ServiceNow might be temporarily unavailable
-        // But if we get multiple consecutive errors, we should consider stopping
+        // Increment consecutive error count for tracking
+        consecutiveErrorsRef.current += 1;
+        
+        // ENHANCED: Comprehensive error detection for stopping polling
+        const shouldStopPolling = () => {
+          // 404 errors - progress ID doesn't exist
+          if (error instanceof Error && 
+              ((error as any).status === 404 || 
+               error.message.includes('404') || 
+               error.message.includes('Not Found'))) {
+            return { stop: true, reason: '404_progress_not_found', message: 'Progress ID does not exist' };
+          }
+          
+          // Authentication/Permission errors - should not retry
+          if (error instanceof Error && 
+              ((error as any).status === 401 || (error as any).status === 403 ||
+               error.message.includes('401') || error.message.includes('403') ||
+               error.message.includes('Unauthorized') || error.message.includes('Forbidden'))) {
+            return { stop: true, reason: 'auth_error', message: 'Authentication or permission error' };
+          }
+          
+          // Network/Connection errors that indicate polling should stop
+          if (error instanceof Error && 
+              (error.message.includes('Failed to fetch') ||
+               error.message.includes('Network error') ||
+               error.message.includes('ERR_NETWORK') ||
+               error.message.includes('ERR_INTERNET_DISCONNECTED'))) {
+            return { stop: true, reason: 'network_error', message: 'Network connection failed' };
+          }
+          
+          // Timeout errors - ServiceNow may be overloaded
+          if (error instanceof Error && 
+              (error.message.includes('timeout') || error.message.includes('TIMEOUT') ||
+               (error as any).code === 'TIMEOUT' || (error as any).name === 'TimeoutError')) {
+            return { stop: true, reason: 'timeout_error', message: 'Request timeout - service unavailable' };
+          }
+          
+          // Too many consecutive errors - ServiceNow may be down
+          if (consecutiveErrorsRef.current >= maxConsecutiveErrors) {
+            return { stop: true, reason: 'max_consecutive_errors', message: `${maxConsecutiveErrors} consecutive polling errors` };
+          }
+          
+          // Server errors (5xx) - but only stop after multiple attempts
+          if (error instanceof Error && 
+              ((error as any).status >= 500 || error.message.includes('500') || error.message.includes('Internal Server Error')) &&
+              consecutiveErrorsRef.current >= 2) { // Stop after 2 server errors
+            return { stop: true, reason: 'server_error', message: 'Multiple server errors - service may be down' };
+          }
+          
+          return { stop: false, reason: 'transient_error', message: 'Transient error - continue polling' };
+        };
+        
+        const errorDecision = shouldStopPolling();
+        
+        if (errorDecision.stop) {
+          logger.info(`🛑 PROGRESS POLLING: Stopping due to ${errorDecision.reason}`, createLogContext({
+            progressId,
+            reason: errorDecision.reason,
+            consecutiveErrors: consecutiveErrorsRef.current,
+            maxConsecutiveErrors,
+            errorMessage: error instanceof Error ? error.message : String(error),
+            decision: 'stop_polling'
+          }));
+          
+          batchProgressStore.errorOperation(`Installation failed - ${errorDecision.message}`, {
+            httpStatus: (error as any).status ? String((error as any).status) : 'unknown',
+            statusMessage: errorDecision.message,
+            errorCode: errorDecision.reason.toUpperCase(),
+            isFromResponseBody: false,
+            consecutiveErrors: consecutiveErrorsRef.current
+          });
+          
+          stopProgressPolling();
+          return; // Exit the polling loop
+        } else {
+          // Transient error - log but continue polling
+          logger.warn(`⚠️ PROGRESS POLLING: Transient error ${consecutiveErrorsRef.current}/${maxConsecutiveErrors}`, createLogContext({
+            progressId,
+            reason: errorDecision.reason,
+            consecutiveErrors: consecutiveErrorsRef.current,
+            maxConsecutiveErrors,
+            errorMessage: error instanceof Error ? error.message : String(error),
+            decision: 'continue_polling'
+          }));
+          
+          // Continue polling - the interval will retry automatically
+        }
       }
     }, pollingInterval);
 
@@ -408,40 +498,163 @@ export const useInstallUpdates = (
         errorType: error.responseBody?.error || error.errorCode || 'unknown'
       }));
 
-      // FIXED: Extract original ApiError from TanStack Query wrapper
-      // TanStack Query wraps our ApiError in a basic Error, losing custom properties
+      // ENHANCED: Extract original ServiceNow error from TanStack Query wrapper with comprehensive unwrapping
       let originalError = error;
       
-      // Check for TanStack Query error patterns
-      if (error.cause && typeof error.cause === 'object') {
-        originalError = error.cause; // TanStack Query stores original in 'cause'
-      } else if (error.originalError && typeof error.originalError === 'object') {
-        originalError = error.originalError; // Alternative pattern
-      } else if (error.request && error.request.error) {
-        originalError = error.request.error; // Another possible location
+      // Multiple unwrapping strategies to find the original ServiceNow error with critical properties
+      const unwrappingStrategies = [
+        // Strategy 1: Direct ServiceNow error detection (already enhanced)
+        () => {
+          if (error && typeof error === 'object' && 
+              (error.isServiceNowNested || error.errorSource || error.credentialObject)) {
+            return error; // This is already our enhanced ServiceNow error
+          }
+          return null;
+        },
+        
+        // Strategy 2: TanStack Query patterns
+        () => error.cause && typeof error.cause === 'object' ? error.cause : null,
+        () => error.originalError && typeof error.originalError === 'object' ? error.originalError : null,
+        () => error.request && error.request.error ? error.request.error : null,
+        
+        // Strategy 3: Additional unwrapping patterns for ServiceNow errors
+        () => error.inner && typeof error.inner === 'object' ? error.inner : null,
+        () => error.original && typeof error.original === 'object' ? error.original : null,
+        () => error.sourceError && typeof error.sourceError === 'object' ? error.sourceError : null,
+        
+        // Strategy 4: Nested error in response data
+        () => error.response && error.response.data && typeof error.response.data === 'object' ? error.response.data : null,
+        () => error.data && typeof error.data === 'object' ? error.data : null,
+        
+        // Strategy 5: Deep nested patterns
+        () => {
+          // Check multiple levels deep for TanStack Query wrappers
+          let current = error;
+          for (let i = 0; i < 5 && current; i++) {
+            if (current.isServiceNowNested || current.errorSource || current.credentialObject) {
+              return current;
+            }
+            current = current.cause || current.originalError || current.inner || current.original;
+          }
+          return null;
+        }
+      ];
+      
+      // Try each unwrapping strategy until we find the original ServiceNow error
+      for (const strategy of unwrappingStrategies) {
+        const candidate = strategy();
+        if (candidate && typeof candidate === 'object') {
+          // Verify this looks like our enhanced ServiceNow error
+          if (candidate.isServiceNowNested || candidate.errorSource || candidate.credentialObject || 
+              candidate.responseBody || candidate.shouldStopPolling) {
+            originalError = candidate;
+            break;
+          }
+        }
       }
+      
+      // CRITICAL: Ensure all ServiceNow error properties are preserved by copying from any level
+      // Sometimes properties are at different levels in the error chain
+      const preserveProperty = (propName: string) => {
+        if (!originalError[propName]) {
+          // Search through the error chain for this property
+          let current = error;
+          for (let i = 0; i < 5 && current; i++) {
+            if (current[propName]) {
+              originalError[propName] = current[propName];
+              break;
+            }
+            current = current.cause || current.originalError || current.inner || current.original;
+          }
+        }
+      };
+      
+      // Preserve critical properties needed for authentication button
+      preserveProperty('errorSource');
+      preserveProperty('credentialObject');
+      preserveProperty('isServiceNowNested');
+      preserveProperty('shouldStopPolling');
+      preserveProperty('responseBody');
+      preserveProperty('correlationId');
 
-      // FIXED: Enhanced error handling with better logging and type safety
+      // ENHANCED: Type-safe error handling with proper guards and safety checks
       let errorTitle = 'Installation Failed';
       let errorMessage = 'Failed to start installation process';
-      let httpStatus: string;
-      let statusMessage: string;
+      let httpStatus: string = '';
+      let statusMessage: string = '';
       
-      // FIXED: Check if originalError contains structured response body information with detailed logging
-      if (originalError.responseBody) {
-        // Use the actual error details from the response body with type safety
-        errorMessage = getString(originalError.responseBody.message || originalError.message, errorMessage);
-        httpStatus = getString(originalError.responseBody.http_status || originalError.httpStatus, '');
-        statusMessage = getString(originalError.responseBody.status_message || originalError.statusMessage, '');
-      } else if (originalError.httpStatus) {
-        // Fallback to error properties if no response body with type safety
-        httpStatus = getString(originalError.httpStatus, '');
-        statusMessage = getString(originalError.statusMessage, '');
-        errorMessage = getString(originalError.message, errorMessage);
+      // TYPE GUARD: Safe property access with type checking
+      const safeGetProperty = (obj: any, prop: string, defaultValue: any = '') => {
+        if (!obj || typeof obj !== 'object') return defaultValue;
+        const value = obj[prop];
+        return value !== undefined && value !== null ? value : defaultValue;
+      };
+      
+      // TYPE GUARD: Check if object has response body structure
+      const hasResponseBody = (obj: any): boolean => {
+        return obj && typeof obj === 'object' && obj.responseBody && typeof obj.responseBody === 'object';
+      };
+      
+      // TYPE GUARD: Check if object looks like an HTTP error
+      const isHttpError = (obj: any): boolean => {
+        return obj && typeof obj === 'object' && (
+          typeof obj.httpStatus === 'number' || typeof obj.httpStatus === 'string' ||
+          typeof obj.status === 'number' || typeof obj.status === 'string'
+        );
+      };
+      
+      // TYPE GUARD: Safe HTTP status extraction and conversion
+      const safeGetHttpStatus = (obj: any): string => {
+        if (!obj || typeof obj !== 'object') return '';
+        
+        // Check multiple possible status properties with type safety
+        const statusSources = [
+          obj.responseBody?.http_status,
+          obj.httpStatus,
+          obj.status,
+          obj.response?.status
+        ];
+        
+        for (const status of statusSources) {
+          if (typeof status === 'number' && status > 0) return String(status);
+          if (typeof status === 'string' && status.trim() !== '') return status.trim();
+        }
+        
+        return '';
+      };
+      
+      // ENHANCED: Type-safe error detail extraction with comprehensive fallbacks
+      if (hasResponseBody(originalError)) {
+        // Response body exists - extract details safely
+        errorMessage = getString(
+          safeGetProperty(originalError.responseBody, 'message') || 
+          safeGetProperty(originalError, 'message'),
+          errorMessage
+        );
+        httpStatus = safeGetHttpStatus(originalError);
+        statusMessage = getString(
+          safeGetProperty(originalError.responseBody, 'status_message') || 
+          safeGetProperty(originalError, 'statusMessage'),
+          ''
+        );
+      } else if (isHttpError(originalError)) {
+        // HTTP error without response body - extract available details
+        httpStatus = safeGetHttpStatus(originalError);
+        statusMessage = getString(safeGetProperty(originalError, 'statusMessage'), '');
+        errorMessage = getString(safeGetProperty(originalError, 'message'), errorMessage);
       } else {
-        errorMessage = getString(originalError.message || error.message, errorMessage);
-        httpStatus = '';
-        statusMessage = '';
+        // Fallback to basic error extraction with type safety
+        errorMessage = getString(
+          safeGetProperty(originalError, 'message') || 
+          safeGetProperty(error, 'message'),
+          errorMessage
+        );
+        httpStatus = safeGetHttpStatus(originalError) || safeGetHttpStatus(error);
+        statusMessage = getString(
+          safeGetProperty(originalError, 'statusMessage') ||
+          safeGetProperty(error, 'statusMessage'),
+          ''
+        );
       }
 
       // DEBUG: Log error properties for button debugging - ENHANCED to show all error properties
@@ -473,23 +686,36 @@ export const useInstallUpdates = (
         responseBodyKeys: originalError.responseBody ? Object.keys(originalError.responseBody) : []
       }));
 
-      // FIXED: Display appropriate error modal based on the actual HTTP status from response body
+      // ENHANCED: Type-safe error modal display with comprehensive property checking
+      const safeGetErrorSource = (): string => getString(safeGetProperty(originalError, 'errorSource'), '');
+      const safeGetCredentialObject = (): string => getString(safeGetProperty(originalError, 'credentialObject'), '');
+      
+      // TYPE GUARD: Check if authentication button should be shown
+      const shouldShowAuthButton = (): boolean => {
+        const hasAuthHttpStatus = httpStatus === '401' || httpStatus === '403';
+        const hasSubflowSource = safeGetErrorSource() === 'servicenow-subflow';
+        const hasCredentialObject = safeGetCredentialObject() !== '';
+        
+        return hasAuthHttpStatus && hasSubflowSource && hasCredentialObject;
+      };
+      
+      // ENHANCED: Type-safe error modal routing with better error categorization
       if (httpStatus === '401') {
         showAuthError(
           errorMessage,
           undefined, // Progress ID not available at this stage
-          getString(originalError.errorSource), // Use type-safe getter
-          getString(originalError.credentialObject) // Use type-safe getter
+          safeGetErrorSource(),
+          safeGetCredentialObject()
         );
       } else if (httpStatus === '403') {
         showHttpError(
-          getString(originalError.errorSource) === 'servicenow-subflow' ? 'Subflow Permission Error' : 'Permission Error',
+          shouldShowAuthButton() ? 'Subflow Permission Error' : 'Permission Error',
           errorMessage,
           httpStatus,
           statusMessage,
           undefined,
-          getString(originalError.errorSource), // Use type-safe getter
-          getString(originalError.credentialObject) // Use type-safe getter
+          safeGetErrorSource(),
+          safeGetCredentialObject()
         );
       } else if (httpStatus === '404') {
         showHttpError(
@@ -498,23 +724,23 @@ export const useInstallUpdates = (
           httpStatus,
           statusMessage,
           undefined,
-          getString(originalError.errorSource), // Use type-safe getter
-          getString(originalError.credentialObject) // Use type-safe getter
+          safeGetErrorSource(),
+          safeGetCredentialObject()
         );
-      } else if (httpStatus === '500' || error.message.includes('HTTP 500')) {
+      } else if (httpStatus === '500' || (error instanceof Error && error.message.includes('HTTP 500'))) {
         showServerError(
           errorMessage,
           undefined // Progress ID not available
         );
-      } else if (error.message && error.message.includes('Failed to fetch')) {
+      } else if (error instanceof Error && error.message.includes('Failed to fetch')) {
         showHttpError(
           'Connection Error',
           'Network connection failed. Please check your connection and try again.',
           undefined,
           undefined,
           undefined,
-          getString(originalError.errorSource), // Use type-safe getter
-          getString(originalError.credentialObject) // Use type-safe getter
+          safeGetErrorSource(),
+          safeGetCredentialObject()
         );
       } else {
         // Generic error - use the enhanced modal with available details
@@ -524,18 +750,62 @@ export const useInstallUpdates = (
           httpStatus || undefined, // Don't pass empty string
           statusMessage || undefined, // Don't pass empty string
           undefined,
-          getString(originalError.errorSource), // Use type-safe getter
-          getString(originalError.credentialObject) // Use type-safe getter
+          safeGetErrorSource(),
+          safeGetCredentialObject()
         );
       }
 
-      // Update store with error - use enhanced error message with type safety
+      // ENHANCED: Type-safe store error update with comprehensive property extraction
       batchProgressStore.errorOperation(errorMessage, {
         httpStatus,
         statusMessage,
-        errorCode: getString(originalError.responseBody?.error || originalError.errorCode),
-        isFromResponseBody: originalError.isFromResponseBody || false
+        errorCode: getString(
+          safeGetProperty(originalError.responseBody, 'error') || 
+          safeGetProperty(originalError, 'errorCode'),
+          ''
+        ),
+        isFromResponseBody: hasResponseBody(originalError),
+        consecutiveErrors: consecutiveErrorsRef.current
       });
+
+      // ENHANCED: Type-safe polling control with comprehensive error checking
+      const shouldStopPollingOnError = (): boolean => {
+        // Check shouldStopPolling property with type safety
+        const explicitStop = safeGetProperty(originalError, 'shouldStopPolling', false);
+        if (explicitStop === true) return true;
+        
+        // Check HTTP status codes that should stop polling
+        const stopStatusCodes = ['401', '403', '404'];
+        if (stopStatusCodes.includes(httpStatus)) return true;
+        
+        // Check for network errors that should stop polling
+        if (error instanceof Error) {
+          const networkErrorPatterns = ['Failed to fetch', 'Network error', 'ERR_NETWORK'];
+          for (const pattern of networkErrorPatterns) {
+            if (error.message.includes(pattern)) return true;
+          }
+        }
+        
+        return false;
+      };
+
+      // CRITICAL: Stop progress polling based on enhanced error analysis
+      if (shouldStopPollingOnError()) {
+        logger.info('🛑 INSTALL UPDATES: Stopping progress polling due to critical error', createLogContext({
+          correlationId,
+          httpStatus,
+          shouldStopPolling: safeGetProperty(originalError, 'shouldStopPolling', false),
+          errorSource: safeGetErrorSource(),
+          reason: 'authentication_or_critical_error',
+          errorAnalysis: {
+            hasExplicitStop: safeGetProperty(originalError, 'shouldStopPolling', false),
+            isStopStatusCode: ['401', '403', '404'].includes(httpStatus),
+            isNetworkError: error instanceof Error && ['Failed to fetch', 'Network error'].some(p => error.message.includes(p))
+          }
+        }));
+        
+        stopProgressPolling(); // Stop any polling that may have started
+      }
 
       // STEP 6: Final error logging with correlation
       logger.info('💥 INSTALL UPDATES: Final error handling at Hook layer', createLogContext({

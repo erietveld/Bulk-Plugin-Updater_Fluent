@@ -1,7 +1,7 @@
 // src/client/app.tsx
 // Full featured app component following atomic design principles
 // Implements: Performance by Default, Strategic Error Boundaries, Code Splitting
-// RESTORED: Full version with theme switcher and all features
+// STATUS DIAGNOSTICS: Detects ?check_status=true and loads dedicated diagnostic page
 // UPDATED: Reduced Stack gap from "lg" to "xs" for consistent spacing with cards
 // FIXED: Removed props from FloatingThemeSwitcher as it uses its own hooks
 
@@ -36,12 +36,21 @@ import {
 // Import validation hook
 import useValidationStatus from '../hooks/useValidationStatus';
 
+// Import status diagnostics
+import { StatusDiagnostics } from '../components/diagnostics/StatusDiagnostics';
+
 // Enhanced color scheme manager with system preference detection
 const colorSchemeManager = createEnhancedColorSchemeManager();
 
 // Check if debug mode is enabled
 const isDebugMode = () => {
   return new URLSearchParams(window.location.search).get('sn_debug') === 'true';
+};
+
+// Check if status diagnostics mode is enabled
+const isStatusDiagnosticsMode = () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.has('check_status');
 };
 
 // Loading fallback for components
@@ -52,9 +61,25 @@ const AppContent: React.FC = () => {
   const { currentTheme, switchTheme, isChanging } = useThemeManagement();
   const performanceMetrics = usePerformanceTracking();
   const debugMode = isDebugMode();
+  const statusMode = isStatusDiagnosticsMode();
   
   // Get validation status (only fetches if URL parameter is present)
   const validationStatus = useValidationStatus();
+
+  // If status diagnostics mode is enabled, show only the diagnostics page
+  if (statusMode) {
+    logger.info('Loading status diagnostics page', createLogContext({
+      statusMode: true,
+      debugMode,
+      skipMainApp: true
+    }));
+    
+    return (
+      <AppErrorBoundary>
+        <StatusDiagnostics />
+      </AppErrorBoundary>
+    );
+  }
 
   // Create query client with memoization to prevent recreation
   const queryClient = useMemo(() => {
@@ -85,9 +110,10 @@ const AppContent: React.FC = () => {
       currentTheme,
       isChanging,
       debugMode,
+      statusMode,
       hasPerformanceTracking: !!performanceMetrics
     }));
-  }, [currentTheme, isChanging, debugMode, performanceMetrics]);
+  }, [currentTheme, isChanging, debugMode, statusMode, performanceMetrics]);
 
   return (
     <QueryClientProvider client={queryClient}>
