@@ -57,6 +57,8 @@ Ready to transform your ServiceNow plugin management experience? This applicatio
    - The system will automatically detect package.json and install dependencies
    - Click the Build and Install button on the button right of the IDE
    - !!! Warning messages [warn] regarding 'use client' directives can be ignored; these come from Node modules
+4. **Run verification**
+   - Check state of installation using https://[INSTANCE].service-now.com/x_snc_store_upda_1_plugin_updater.do?check_status=true
 
 ---
 

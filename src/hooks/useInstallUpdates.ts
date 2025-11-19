@@ -85,7 +85,7 @@ export const useInstallUpdates = (
   const queryClient = useQueryClient();
   const batchProgressStore = useBatchProgressStore();
   const { showSuccess, showError, showInfo } = useNotifications(); // showError for non-API errors
-  const { showHttpError, showAuthError, showServerError, modalOpened, modalError, closeModal } = useApiErrorModal(); // NEW: Enhanced error handling
+  const { showHttpError, showAuthError, showServerError, showNetworkError, modalOpened, modalError, closeModal } = useApiErrorModal(); // NEW: Enhanced error handling
   
   // Progress polling ref
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -361,6 +361,76 @@ export const useInstallUpdates = (
             isFromResponseBody: false,
             consecutiveErrors: consecutiveErrorsRef.current
           });
+          
+          // CRITICAL: Show error modal to user for terminal API failures
+          const httpStatus = (error as any).status ? String((error as any).status) : 'unknown';
+          const errorMessage = `Installation failed - ${errorDecision.message}`;
+          
+          // Show appropriate modal based on error type for all terminal failures
+          if (errorDecision.reason === '404_progress_not_found') {
+            showHttpError(
+              'Progress Tracking Failed',
+              'The installation progress could not be tracked. The installation may still be running in the background.',
+              '404',
+              'Progress ID not found',
+              progressId
+            );
+          } else if (errorDecision.reason === 'auth_error') {
+            if (httpStatus === '401') {
+              showAuthError(
+                errorMessage,
+                progressId,
+                'servicenow-progress-api', // Error source for progress API
+                '' // No specific credential object for progress API
+              );
+            } else {
+              showHttpError(
+                'Progress Tracking Permission Error',
+                errorMessage,
+                httpStatus,
+                'Access denied to progress API',
+                progressId
+              );
+            }
+          } else if (errorDecision.reason === 'network_error') {
+            showHttpError(
+              'Progress Tracking Connection Failed',
+              'Network connection lost during progress tracking. The installation may still be running in the background.',
+              undefined,
+              undefined,
+              progressId
+            );
+          } else if (errorDecision.reason === 'timeout_error') {
+            showHttpError(
+              'Progress Tracking Timeout',
+              'Progress tracking timed out. The ServiceNow instance may be overloaded. The installation may still be running.',
+              undefined,
+              'Request timeout',
+              progressId
+            );
+          } else if (errorDecision.reason === 'server_error') {
+            showServerError(
+              'Progress tracking failed due to server errors. The installation may still be running in the background.',
+              progressId
+            );
+          } else if (errorDecision.reason === 'max_consecutive_errors') {
+            showHttpError(
+              'Progress Tracking Failed',
+              `Multiple consecutive errors occurred during progress tracking (${consecutiveErrorsRef.current}/${maxConsecutiveErrors}). The installation may still be running.`,
+              undefined,
+              'Multiple consecutive errors',
+              progressId
+            );
+          } else {
+            // Generic terminal error modal
+            showHttpError(
+              'Progress Tracking Error',
+              errorMessage,
+              httpStatus !== 'unknown' ? httpStatus : undefined,
+              errorDecision.message,
+              progressId
+            );
+          }
           
           stopProgressPolling();
           return; // Exit the polling loop

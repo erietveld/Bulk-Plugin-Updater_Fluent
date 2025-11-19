@@ -1,6 +1,7 @@
 // src/components/diagnostics/StatusDiagnostics.tsx
-// Comprehensive system status diagnostics page - loads independently from main app
-// Activated with ?check_status=true URL parameter for fast troubleshooting
+// REFACTORED: Uses enterprise libraries and existing architecture patterns
+// Comprehensive system status diagnostics page - activated with ?check_status=true
+// ENTERPRISE LIBRARIES: ky (via apiService), zod validation, structured logging, nanoid correlation
 
 import React, { useState, useEffect } from 'react';
 import { 
@@ -12,14 +13,12 @@ import {
   Badge, 
   Stack, 
   Button, 
-  Code,
   Divider,
   Progress,
   Alert,
   Tabs,
   List,
-  Grid,
-  Paper
+  Grid
 } from '@mantine/core';
 import { 
   IconCircleCheck, 
@@ -29,31 +28,39 @@ import {
   IconServer, 
   IconApi, 
   IconSettings,
-  IconDownload,
   IconAlertCircle,
   IconRefresh
 } from '@tabler/icons-react';
+import { z } from 'zod';
 import { nanoid } from 'nanoid';
+import { logger, createLogContext } from '../../lib/logging/logger';
 import { getString, getBoolean, getInteger } from '../../utils/typeRefinements';
 
-// Status check result interface
-interface StatusCheck {
-  id: string;
-  name: string;
-  status: 'success' | 'error' | 'warning' | 'checking';
-  message: string;
-  details?: string;
-  duration?: number;
-  suggestions?: string[];
-}
+// ENTERPRISE: Import existing architecture components
+import useValidationStatus from '../../hooks/useValidationStatus';
+import { ValidationStatusCard } from '../../components/molecules/ValidationStatusCard/ValidationStatusCard';
+import { useEnhancedUserContext } from '../../hooks/useUserContext';
 
-// Comprehensive status categories
-interface SystemStatus {
-  user: StatusCheck[];
-  api: StatusCheck[];
-  system: StatusCheck[];
-  performance: StatusCheck[];
-}
+// ENTERPRISE: Zod schemas for type safety
+const StatusCheckSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  status: z.enum(['success', 'error', 'warning', 'checking']),
+  message: z.string(),
+  details: z.string().optional(),
+  duration: z.number().optional(),
+  suggestions: z.array(z.string()).optional()
+});
+
+const SystemStatusSchema = z.object({
+  user: z.array(StatusCheckSchema),
+  api: z.array(StatusCheckSchema),
+  system: z.array(StatusCheckSchema),
+  performance: z.array(StatusCheckSchema)
+});
+
+type StatusCheck = z.infer<typeof StatusCheckSchema>;
+type SystemStatus = z.infer<typeof SystemStatusSchema>;
 
 export const StatusDiagnostics: React.FC = () => {
   const [status, setStatus] = useState<SystemStatus>({
@@ -63,47 +70,72 @@ export const StatusDiagnostics: React.FC = () => {
     performance: []
   });
   const [isRunning, setIsRunning] = useState(false);
-  const [jsonMode, setJsonMode] = useState(false);
   const [overallStatus, setOverallStatus] = useState<'success' | 'error' | 'warning' | 'checking'>('checking');
-  const correlationId = nanoid(10);
+  
+  // ENTERPRISE: Use nanoid for correlation tracking
+  const [correlationId] = useState(() => nanoid(10));
 
-  // Check if JSON output mode is requested
+  // ENTERPRISE: Use existing architecture hooks
+  const validationStatus = useValidationStatus();
+  const userContext = useEnhancedUserContext();
+
+  // Check if component should show (only when URL parameter check_status=true)
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    setJsonMode(urlParams.get('check_status') === 'json');
-  }, []);
+    // ENTERPRISE: Structured logging with correlation
+    logger.info('Status diagnostics initialized', createLogContext({
+      correlationId,
+      checkStatusParam: new URLSearchParams(window.location.search).get('check_status'),
+      userFirstName: userContext.firstName,
+      isAdmin: userContext.isAdmin
+    }));
+  }, [correlationId, userContext.firstName, userContext.isAdmin]);
 
   // Run comprehensive status checks
   const runStatusChecks = async () => {
     setIsRunning(true);
     const startTime = Date.now();
 
-    try {
-      // Initialize all checks
-      const userChecks: StatusCheck[] = [];
-      const apiChecks: StatusCheck[] = [];
-      const systemChecks: StatusCheck[] = [];
-      const performanceChecks: StatusCheck[] = [];
+    // ENTERPRISE: Structured logging for operation start
+    logger.info('🔍 STATUS DIAGNOSTICS: Starting comprehensive checks', createLogContext({
+      correlationId,
+      startTime,
+      operation: 'comprehensive_status_check',
+      userContext: userContext.firstName,
+      component: 'StatusDiagnostics'
+    }));
 
-      // USER CHECKS
-      await checkUserStatus(userChecks);
+    try {
+      // Initialize all checks with enterprise validation
+      const userChecksRaw: any[] = [];
+      const apiChecksRaw: any[] = [];
+      const systemChecksRaw: any[] = [];
+      const performanceChecksRaw: any[] = [];
+
+      // USER CHECKS - Enhanced with existing user context
+      await checkUserStatus(userChecksRaw);
       
-      // API CHECKS  
-      await checkApiStatus(apiChecks);
+      // API CHECKS - Uses existing validation hook (ky + apiService)
+      await checkApiStatus(apiChecksRaw);
       
-      // SYSTEM CHECKS
-      await checkSystemStatus(systemChecks);
+      // SYSTEM CHECKS - Enhanced with existing architecture
+      await checkSystemStatus(systemChecksRaw);
       
       // PERFORMANCE CHECKS
-      await checkPerformanceStatus(performanceChecks, startTime);
+      await checkPerformanceStatus(performanceChecksRaw, startTime);
 
-      // Update state
-      const newStatus = {
+      // ENTERPRISE: Validate all checks with zod schemas
+      const userChecks = z.array(StatusCheckSchema).parse(userChecksRaw);
+      const apiChecks = z.array(StatusCheckSchema).parse(apiChecksRaw);
+      const systemChecks = z.array(StatusCheckSchema).parse(systemChecksRaw);
+      const performanceChecks = z.array(StatusCheckSchema).parse(performanceChecksRaw);
+
+      // Update state with validated data
+      const newStatus = SystemStatusSchema.parse({
         user: userChecks,
         api: apiChecks,
         system: systemChecks,
         performance: performanceChecks
-      };
+      });
 
       setStatus(newStatus);
 
@@ -112,38 +144,53 @@ export const StatusDiagnostics: React.FC = () => {
       const hasErrors = allChecks.some(check => check.status === 'error');
       const hasWarnings = allChecks.some(check => check.status === 'warning');
       
-      if (hasErrors) {
-        setOverallStatus('error');
-      } else if (hasWarnings) {
-        setOverallStatus('warning');
-      } else {
-        setOverallStatus('success');
-      }
+      const finalStatus = hasErrors ? 'error' : hasWarnings ? 'warning' : 'success';
+      setOverallStatus(finalStatus);
+
+      // ENTERPRISE: Structured logging for completion
+      logger.info('✅ STATUS DIAGNOSTICS: Checks completed', createLogContext({
+        correlationId,
+        duration: Date.now() - startTime,
+        overallStatus: finalStatus,
+        totalChecks: allChecks.length,
+        errorCount: allChecks.filter(c => c.status === 'error').length,
+        warningCount: allChecks.filter(c => c.status === 'warning').length,
+        operation: 'comprehensive_status_check_complete'
+      }));
 
     } catch (error) {
-      console.error('Status check failed:', error);
+      // ENTERPRISE: Structured error logging
+      logger.error('❌ STATUS DIAGNOSTICS: Check failed', 
+        error instanceof Error ? error : new Error(String(error)),
+        createLogContext({
+          correlationId,
+          duration: Date.now() - startTime,
+          component: 'StatusDiagnostics',
+          operation: 'comprehensive_status_check_failed'
+        })
+      );
       setOverallStatus('error');
     } finally {
       setIsRunning(false);
     }
   };
 
-  // User status checks
-  const checkUserStatus = async (checks: StatusCheck[]) => {
+  // User status checks - ENHANCED with existing user context
+  const checkUserStatus = async (checks: any[]) => {
     const userCheckStart = Date.now();
 
     try {
-      // Get user context from window (Pattern 2A immediate data)
-      const userData = (window as any).snImmediateData?.userContext;
-      const appData = (window as any).snImmediateData?.appContext;
+      // ENTERPRISE: Use existing enhanced user context
+      const userData = userContext;
       
-      // Check 1: User Authentication
-      if (userData?.user_name) {
+      // Check 1: User Authentication - Enhanced
+      if (userData.displayName) {
         checks.push({
           id: 'user_auth',
           name: 'User Authentication',
           status: 'success',
-          message: `Authenticated as: ${userData.display_name} (${userData.user_name})`,
+          message: `Authenticated as: ${userData.displayName} (${userData.fullName})`,
+          details: `Email: ${userData.email}`,
           duration: Date.now() - userCheckStart
         });
       } else {
@@ -157,40 +204,30 @@ export const StatusDiagnostics: React.FC = () => {
         });
       }
 
-      // Check 2: Admin Role
-      const isAdmin = getBoolean(userData?.is_admin || appData?.has_admin_role, false);
+      // Check 2: Admin Role with Installation Warning - ENHANCED
       checks.push({
         id: 'admin_role',
         name: 'Administrator Role',
-        status: isAdmin ? 'success' : 'warning',
-        message: isAdmin ? 'User has administrator privileges' : 'User does not have administrator role',
-        details: isAdmin ? 'Can perform plugin installations' : 'Limited functionality - installations may not be permitted',
-        suggestions: isAdmin ? [] : ['Contact administrator for role assignment', 'Verify plugin installation permissions'],
+        status: userData.isAdmin ? 'success' : 'warning',
+        message: userData.isAdmin ? 'User has administrator privileges' : 'User does not have administrator role - installation buttons will be disabled',
+        details: userData.isAdmin ? 'Can perform plugin installations' : 'Limited functionality - installations not permitted without admin role',
+        suggestions: userData.isAdmin ? [] : ['Contact administrator for role assignment', 'Installation features will be disabled in the interface'],
         duration: Date.now() - userCheckStart
       });
 
-      // Check 3: Plugin Installation Permissions
-      const canInstall = getBoolean(appData?.can_bulk_update, false) || isAdmin;
+      // Check 3: Plugin Installation Permissions - Enhanced
+      const canInstall = userData.capabilities.canBulkUpdate || userData.isAdmin;
       checks.push({
         id: 'install_permissions',
         name: 'Plugin Installation Permissions',
         status: canInstall ? 'success' : 'error',
         message: canInstall ? 'User can install plugins' : 'User cannot install plugins',
-        details: canInstall ? 'Bulk update permissions available' : 'Missing bulk update permissions',
-        suggestions: canInstall ? [] : ['Contact administrator for permissions', 'Verify role assignments'],
+        details: canInstall ? 'Bulk update permissions available' : 'Missing bulk update permissions - installation buttons disabled',
+        suggestions: canInstall ? [] : ['Contact administrator for permissions', 'Verify role assignments', 'Installation features will be unavailable'],
         duration: Date.now() - userCheckStart
       });
 
-      // Check 4: User Roles
-      const roles = userData?.roles || [];
-      checks.push({
-        id: 'user_roles',
-        name: 'User Roles',
-        status: Array.isArray(roles) && roles.length > 0 ? 'success' : 'warning',
-        message: `User has ${roles.length} role(s)`,
-        details: Array.isArray(roles) ? `Roles: ${roles.slice(0, 3).join(', ')}${roles.length > 3 ? '...' : ''}` : 'No role information available',
-        duration: Date.now() - userCheckStart
-      });
+      // REMOVED: Redundant User Roles check as requested
 
     } catch (error) {
       checks.push({
@@ -205,84 +242,120 @@ export const StatusDiagnostics: React.FC = () => {
     }
   };
 
-  // API status checks
-  const checkApiStatus = async (checks: StatusCheck[]) => {
+  // API status checks - Individual validation checks as separate CheckCard entries
+  const checkApiStatus = async (checks: any[]) => {
     const apiCheckStart = Date.now();
 
     try {
-      // Check 1: Install Updates API Validation
-      const validationStart = Date.now();
-      try {
-        const response = await fetch('/api/x_snc_store_upda_1/install_updates', {
-          method: 'GET',
-          headers: {
-            'X-UserToken': getString((window as any).g_ck, ''),
-            'Content-Type': 'application/json',
-            'X-Correlation-ID': correlationId
-          }
+      // ENTERPRISE: Use existing validation hook (uses ky via apiService)
+      logger.info('🔌 API STATUS: Using ValidationStatusCard for validation display', createLogContext({
+        correlationId,
+        component: 'StatusDiagnostics',
+        operation: 'api_status_check_start',
+        useValidationCard: true
+      }));
+
+      // Individual validation checks based on ValidationStatusCard data
+      if (validationStatus.validationData) {
+        const validation = validationStatus.validationData.validation;
+        
+        // Check 1: Process Plugin Updates Flow
+        checks.push({
+          id: 'subflow_check',
+          name: 'Process Plugin Updates Flow',
+          status: validation.flow_exists ? 'success' : 'error',
+          message: validation.flow_exists ? 'SubFlow found and active' : 'SubFlow not found or not active',
+          details: validation.flow_exists ? 
+            'Flow Designer workflow "Process Plugin Updates V2" is available' : 
+            'Flow Designer workflow "Process Plugin Updates V2" is missing',
+          suggestions: validation.flow_exists ? [] : [
+            'Check Flow Designer for "Process Plugin Updates V2"',
+            'Verify flow is published and active',
+            'Ensure flow has correct scope permissions'
+          ],
+          duration: Date.now() - apiCheckStart
         });
 
-        if (response.ok) {
-          const data = await response.json();
-          const allReady = getBoolean(data.validation?.all_ready, false);
-          
-          checks.push({
-            id: 'api_validation',
-            name: 'Install Updates API',
-            status: allReady ? 'success' : 'warning',
-            message: allReady ? 'API validation successful - all systems ready' : 'API accessible but some components not ready',
-            details: `Flow exists: ${getBoolean(data.validation?.flow_exists, false)}, Credentials: ${getBoolean(data.validation?.credentials_exist, false)}, Alias: ${getBoolean(data.validation?.alias_exists, false)}`,
-            suggestions: allReady ? [] : ['Check SubFlow configuration', 'Verify credentials setup', 'Check alias configuration'],
-            duration: Date.now() - validationStart
-          });
-        } else {
-          checks.push({
-            id: 'api_validation',
-            name: 'Install Updates API',
-            status: 'error',
-            message: `API request failed: HTTP ${response.status}`,
-            details: `Status: ${response.statusText}`,
-            suggestions: ['Check API permissions', 'Verify REST API is active', 'Check network connectivity'],
-            duration: Date.now() - validationStart
-          });
-        }
-      } catch (apiError) {
+        // Check 2: Plugin CICD Auth Credentials
         checks.push({
-          id: 'api_validation',
-          name: 'Install Updates API',
+          id: 'credentials_check',
+          name: 'Plugin CICD Auth Credentials',
+          status: validation.credentials_exist ? 'success' : 'error',
+          message: validation.credentials_exist ? 'Authentication credentials found' : 'Authentication credentials not found',
+          details: validation.credentials_exist ? 
+            'Basic Auth credentials "Plugin CICD Auth" are configured' : 
+            'Basic Auth credentials "Plugin CICD Auth" are missing',
+          suggestions: validation.credentials_exist ? [] : [
+            'Create basic auth credentials named "Plugin CICD Auth"',
+            'Configure ServiceNow Store API credentials',
+            'Verify credentials have proper permissions'
+          ],
+          duration: Date.now() - apiCheckStart
+        });
+
+        // Check 3: Plugin CICD Auth Alias
+        checks.push({
+          id: 'alias_check',
+          name: 'Plugin CICD Auth Alias',
+          status: validation.alias_exists ? 'success' : 'error',
+          message: validation.alias_exists ? 'Connection alias found' : 'Connection alias not found',
+          details: validation.alias_exists ? 
+            'Connection alias "Plugin CICD Auth" is configured' : 
+            'Connection alias "Plugin CICD Auth" is missing',
+          suggestions: validation.alias_exists ? [] : [
+            'Create connection alias named "Plugin CICD Auth"',
+            'Link alias to authentication credentials',
+            'Test connection from alias configuration'
+          ],
+          duration: Date.now() - apiCheckStart
+        });
+
+      } else if (validationStatus.loading) {
+        checks.push({
+          id: 'validation_loading',
+          name: 'System Validation',
+          status: 'checking',
+          message: 'Loading validation status...',
+          details: 'Checking Flow, Credentials, and Alias configuration',
+          duration: Date.now() - apiCheckStart
+        });
+      } else if (validationStatus.error) {
+        checks.push({
+          id: 'validation_error',
+          name: 'System Validation',
           status: 'error',
-          message: 'API request failed',
-          details: apiError instanceof Error ? apiError.message : String(apiError),
-          suggestions: ['Check network connectivity', 'Verify API endpoint exists', 'Check browser console for errors'],
-          duration: Date.now() - validationStart
+          message: `Validation check failed: ${validationStatus.error}`,
+          details: 'Unable to verify Flow, Credentials, and Alias status',
+          suggestions: ['Check API permissions', 'Verify REST API is active', 'Check network connectivity'],
+          duration: Date.now() - apiCheckStart
         });
       }
 
-      // Check 2: ServiceNow Store API Connectivity
-      const storeApiStart = Date.now();
-      try {
-        // Test virtual table data access
-        const hasImmediateData = !!(window as any).snImmediateData;
-        checks.push({
-          id: 'store_api',
-          name: 'ServiceNow Store Data Access',
-          status: hasImmediateData ? 'success' : 'warning',
-          message: hasImmediateData ? 'Store data access working' : 'Store data not immediately available',
-          details: hasImmediateData ? 'Pattern 2A immediate data operational' : 'May require API calls for data',
-          duration: Date.now() - storeApiStart
-        });
-      } catch (storeError) {
-        checks.push({
-          id: 'store_api',
-          name: 'ServiceNow Store Data Access',
-          status: 'error',
-          message: 'Store data access failed',
-          details: storeError instanceof Error ? storeError.message : String(storeError),
-          duration: Date.now() - storeApiStart
-        });
-      }
+      // ServiceNow Store Data Access - Uses existing architecture
+      const hasImmediateData = userContext.pattern2A.isAvailable;
+      checks.push({
+        id: 'store_api',
+        name: 'ServiceNow Store Data Access',
+        status: hasImmediateData ? 'success' : 'warning',
+        message: hasImmediateData ? 'Store data access working (Pattern 2A)' : 'Store data not immediately available',
+        details: hasImmediateData ? 
+          `Pattern 2A operational - ${userContext.pattern2A.dataAge}ms age` : 
+          'May require API calls for data - using fallback patterns',
+        duration: Date.now() - apiCheckStart
+      });
 
     } catch (error) {
+      // ENTERPRISE: Structured error logging
+      logger.error('❌ API STATUS: Check failed', 
+        error instanceof Error ? error : new Error(String(error)),
+        createLogContext({
+          correlationId,
+          component: 'StatusDiagnostics',
+          operation: 'api_status_check_failed',
+          duration: Date.now() - apiCheckStart
+        })
+      );
+
       checks.push({
         id: 'api_error',
         name: 'API Status Error',
@@ -294,20 +367,20 @@ export const StatusDiagnostics: React.FC = () => {
     }
   };
 
-  // System status checks
-  const checkSystemStatus = async (checks: StatusCheck[]) => {
+  // System status checks - ENHANCED with existing architecture
+  const checkSystemStatus = async (checks: any[]) => {
     const systemCheckStart = Date.now();
 
     try {
-      // Check 1: ServiceNow Platform
-      const platformData = (window as any).snImmediateData?.systemContext;
-      if (platformData) {
+      // Check 1: ServiceNow Platform - Uses existing system context
+      const systemInfo = userContext.system;
+      if (systemInfo.instanceName) {
         checks.push({
           id: 'platform_info',
           name: 'ServiceNow Platform',
           status: 'success',
-          message: `ServiceNow ${getString(platformData.version)} (${getString(platformData.instance_name)})`,
-          details: `Build: ${getString(platformData.build_date)}, Patch: ${getString(platformData.instance_patchlevel)}`,
+          message: `${systemInfo.instanceName} ${systemInfo.version}`,
+          details: `Instance: ${systemInfo.instanceVersion}, Patch: ${systemInfo.instancePatchlevel}`,
           duration: Date.now() - systemCheckStart
         });
       } else {
@@ -321,34 +394,23 @@ export const StatusDiagnostics: React.FC = () => {
         });
       }
 
-      // Check 2: Application Configuration
-      const appData = (window as any).snImmediateData?.appContext;
-      if (appData) {
-        checks.push({
-          id: 'app_config',
-          name: 'Application Configuration',
-          status: 'success',
-          message: `${getString(appData.app_name)} v${getString(appData.app_version)}`,
-          details: `Scope: ${getString(appData.app_scope)}, Table: ${getString(appData.table_name)}`,
-          duration: Date.now() - systemCheckStart
-        });
-      } else {
-        checks.push({
-          id: 'app_config',
-          name: 'Application Configuration',
-          status: 'error',
-          message: 'Application configuration not available',
-          suggestions: ['Check application installation', 'Verify metadata configuration'],
-          duration: Date.now() - systemCheckStart
-        });
-      }
+      // Check 2: Application Configuration - Uses existing app context
+      const appInfo = userContext.app;
+      checks.push({
+        id: 'app_config',
+        name: 'Application Configuration',
+        status: 'success',
+        message: `${appInfo.name} v${appInfo.version}`,
+        details: `Scope: ${appInfo.scope}`,
+        duration: Date.now() - systemCheckStart
+      });
 
       // Check 3: Debug Mode
       const debugEnabled = new URLSearchParams(window.location.search).get('sn_debug') === 'true';
       checks.push({
         id: 'debug_mode',
         name: 'Debug Mode',
-        status: debugEnabled ? 'success' : 'success',
+        status: 'success',
         message: debugEnabled ? 'Debug mode enabled (?sn_debug=true)' : 'Debug mode disabled',
         details: debugEnabled ? 'Enhanced logging and diagnostics active' : 'Production mode - minimal logging',
         duration: Date.now() - systemCheckStart
@@ -366,8 +428,8 @@ export const StatusDiagnostics: React.FC = () => {
     }
   };
 
-  // Performance checks
-  const checkPerformanceStatus = async (checks: StatusCheck[], overallStart: number) => {
+  // Performance checks - Enhanced with enterprise logging
+  const checkPerformanceStatus = async (checks: any[], overallStart: number) => {
     const perfStart = Date.now();
 
     try {
@@ -426,37 +488,10 @@ export const StatusDiagnostics: React.FC = () => {
         status: 'error',
         message: 'Failed to check performance metrics',
         details: error instanceof Error ? error.message : String(error),
-        duration: Date.now() - perfStart
+        duration: Date.now() - perfStart  
       });
     }
   };
-
-  // JSON output for automation
-  if (jsonMode) {
-    return (
-      <Container size="lg" py="xl">
-        <Paper p="md">
-          <Group justify="space-between" mb="md">
-            <Title order={3}>Status Check JSON Output</Title>
-            <Button onClick={runStatusChecks} loading={isRunning} leftSection={<IconRefresh size={16} />}>
-              Run Checks
-            </Button>
-          </Group>
-          <Code block>
-            {JSON.stringify({ 
-              correlationId, 
-              timestamp: new Date().toISOString(),
-              overallStatus,
-              status 
-            }, null, 2)}
-          </Code>
-          <Text size="sm" mt="md" c="dimmed">
-            Correlation ID: {correlationId} | Use ?check_status=true for UI mode
-          </Text>
-        </Paper>
-      </Container>
-    );
-  }
 
   // Status badge component
   const StatusBadge: React.FC<{ status: StatusCheck['status'] }> = ({ status }) => {
@@ -509,13 +544,25 @@ export const StatusDiagnostics: React.FC = () => {
     runStatusChecks();
   }, []);
 
+  // Re-run checks when validation data becomes available (fixes initial load timing issue)
+  useEffect(() => {
+    if (validationStatus.validationData && status.api.length <= 1) {
+      // Validation data is now available but we only have Store Data Access check
+      // Re-run to get individual validation checks
+      runStatusChecks();
+    }
+  }, [validationStatus.validationData, status.api.length]);
+
   return (
     <Container size="lg" py="xl">
       {/* Header */}
       <Group justify="space-between" mb="xl">
         <div>
           <Title order={1}>System Status Diagnostics</Title>
-          <Text c="dimmed">Comprehensive system health and configuration check</Text>
+          <Text c="dimmed">
+            Comprehensive system health check for {userContext.displayName}
+            {!userContext.isAdmin && ' (Limited access - installation buttons will be disabled)'}
+          </Text>
         </div>
         <Group>
           <Button 
@@ -525,21 +572,16 @@ export const StatusDiagnostics: React.FC = () => {
           >
             Run Checks
           </Button>
-          <Button 
-            variant="light" 
-            onClick={() => window.location.href = '?check_status=json'}
-            leftSection={<IconDownload size={16} />}
-          >
-            JSON Output
-          </Button>
         </Group>
       </Group>
 
+
+
       {/* Overall Status */}
-      <Card withBorder mb="xl" bg={overallStatus === 'success' ? 'green.0' : overallStatus === 'error' ? 'red.0' : 'yellow.0'}>
+      <Card withBorder mb="xl">
         <Group justify="space-between">
           <div>
-            <Text fw={500} size="lg">Overall System Status</Text>
+            <Text fw={500} size="lg">Comprehensive System Status</Text>
             <Text size="sm" c="dimmed">Correlation ID: {correlationId}</Text>
           </div>
           <StatusBadge status={overallStatus} />
@@ -597,6 +639,17 @@ export const StatusDiagnostics: React.FC = () => {
         </Tabs.Panel>
 
         <Tabs.Panel value="api" pt="md">
+          {/* ValidationStatusCard - visually disabled, keeping individual checks
+              Uncomment if individual checks regress due to file reversion issues
+          <div style={{ marginBottom: '1rem' }}>
+            <ValidationStatusCard
+              validationData={validationStatus.validationData}
+              loading={validationStatus.loading}
+              error={validationStatus.error}
+              onRefresh={validationStatus.refetch}
+            />
+          </div>
+          */}
           {status.api.map(check => (
             <CheckCard key={check.id} check={check} />
           ))}
@@ -619,7 +672,7 @@ export const StatusDiagnostics: React.FC = () => {
       <Divider my="xl" />
       <Group justify="space-between">
         <Text size="sm" c="dimmed">
-          ServiceNow Batch Plugin Updater - System Diagnostics
+          ServiceNow Batch Plugin Updater - System Diagnostics (Enterprise Libraries)
         </Text>
         <Group gap="xs">
           <Text size="sm" c="dimmed">
